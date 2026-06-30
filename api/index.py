@@ -3,6 +3,7 @@ import json
 import re
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
+import httpx
 import google_auth_oauthlib.flow
 from flask import Flask, render_template, request, jsonify, redirect, session
 from flask_cors import CORS
@@ -47,6 +48,75 @@ limiter = Limiter(get_remote_address, app=app, default_limits=[])
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 MAX_PROMPT_CHARS = 4000
+
+# Reported-case history is optional: without these set, /cases just shows an
+# empty state instead of failing, so GuardMail still works without a database.
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+SUPABASE_CONFIGURED = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
+
+
+def _supabase_headers():
+    return {
+        "apikey": SUPABASE_SERVICE_KEY,
+        "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+        "Content-Type": "application/json",
+    }
+
+
+def save_reported_case(user_email: str, email_id: str, sender: str, subject: str, risk_score: int) -> None:
+    """Persists a reported case to Supabase. Silently no-ops if Supabase isn't configured or the request fails."""
+    if not SUPABASE_CONFIGURED:
+        return
+    try:
+        httpx.post(
+            f"{SUPABASE_URL}/rest/v1/reported_cases",
+            headers=_supabase_headers(),
+            json={
+                "user_email": user_email,
+                "email_id": email_id,
+                "sender": sender,
+                "subject": subject,
+                "risk_score": risk_score,
+            },
+            timeout=5,
+        )
+    except Exception:
+        pass
+
+
+def get_reported_case_ids(user_email: str) -> set:
+    """Returns the email_ids this user has already reported. Empty set if Supabase isn't configured or the request fails."""
+    if not SUPABASE_CONFIGURED or not user_email:
+        return set()
+    try:
+        resp = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/reported_cases",
+            headers=_supabase_headers(),
+            params={"user_email": f"eq.{user_email}", "select": "email_id"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        return {row["email_id"] for row in resp.json()}
+    except Exception:
+        return set()
+
+
+def list_reported_cases(user_email: str) -> list:
+    """Returns this user's reported cases, newest first. Empty list if Supabase isn't configured or the request fails."""
+    if not SUPABASE_CONFIGURED or not user_email:
+        return []
+    try:
+        resp = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/reported_cases",
+            headers=_supabase_headers(),
+            params={"user_email": f"eq.{user_email}", "select": "*", "order": "reported_at.desc"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        return resp.json()
+    except Exception:
+        return []
 
 # Google OAuth Configuration Matrix
 CLIENT_CONFIG = {
@@ -252,7 +322,7 @@ def get_email_body(payload):
     return ""
 
 
-def fetch_gmail_emails(page_token=None):
+def fetch_gmail_emails(page_token=None, reported_ids=None):
     """Builds access credentials and queries live Gmail message matrices seamlessly supporting token pagination.
 
     Returns a 3-tuple: (emails_list, next_page_token, error_message). error_message is
@@ -260,6 +330,8 @@ def fetch_gmail_emails(page_token=None):
     callers can distinguish "empty inbox" from "fetch failed" instead of treating both
     the same way.
     """
+    if reported_ids is None:
+        reported_ids = REPORTED_SOC_IDS
     if 'credentials' not in session:
         return [], None, None
     try:
@@ -329,7 +401,7 @@ def fetch_gmail_emails(page_token=None):
             spoofed = detect_spoofing(meta["sender"])
             links = parse_and_sandbox_links(meta["body"])
             risk_score = calculate_risk_index(category, spoofed, links)
-            soc_reported = meta["id"] in REPORTED_SOC_IDS
+            soc_reported = meta["id"] in reported_ids
 
             emails_list.append({
                 "id": meta["id"],
@@ -353,15 +425,22 @@ def fetch_gmail_emails(page_token=None):
         return [], None, f"Couldn't reach Gmail: {exc.__class__.__name__}"
 
 
+def _reported_ids_for_session():
+    user_email = session.get('user_email')
+    if SUPABASE_CONFIGURED and user_email:
+        return get_reported_case_ids(user_email)
+    return REPORTED_SOC_IDS
+
+
 @app.route('/')
 def index():
     if 'credentials' not in session:
         return render_template('index.html', logged_in=False, emails=[], next_token=None, analytics={"total": 0, "spoofed": 0, "soc_cases": 0, "percentage": 0}, fetch_error=None)
-    
+
     current_token = request.args.get('pageToken', None)
-    emails, next_token, fetch_error = fetch_gmail_emails(page_token=current_token)
+    emails, next_token, fetch_error = fetch_gmail_emails(page_token=current_token, reported_ids=_reported_ids_for_session())
     analytics = calculate_analytics(emails)
-    return render_template('index.html', logged_in=True, emails=emails, next_token=next_token, analytics=analytics, fetch_error=fetch_error)
+    return render_template('index.html', logged_in=True, active_page='inbox', emails=emails, next_token=next_token, analytics=analytics, fetch_error=fetch_error)
 
 
 @app.route('/login')
@@ -419,6 +498,13 @@ def callback():
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes
     }
+
+    try:
+        profile = build('gmail', 'v1', credentials=credentials).users().getProfile(userId='me').execute()
+        session['user_email'] = profile.get('emailAddress')
+    except Exception:
+        session['user_email'] = None
+
     return redirect('/')
 
 
@@ -435,7 +521,7 @@ def stream_feed_state():
         return jsonify({"emails": [], "next_token": None, "analytics": {"total": 0, "spoofed": 0, "soc_cases": 0, "percentage": 0}, "error": None})
     
     requested_token = request.args.get('pageToken', None)
-    emails, next_token, fetch_error = fetch_gmail_emails(page_token=requested_token)
+    emails, next_token, fetch_error = fetch_gmail_emails(page_token=requested_token, reported_ids=_reported_ids_for_session())
     analytics = calculate_analytics(emails)
     return jsonify({"emails": emails, "next_token": next_token, "analytics": analytics, "error": fetch_error})
 
@@ -444,6 +530,22 @@ def stream_feed_state():
 def report_to_soc(email_id):
     """Documents incident and escalates telemetry properties to the Enterprise SOC layer."""
     REPORTED_SOC_IDS.add(email_id)
+
+    user_email = session.get('user_email')
+    if SUPABASE_CONFIGURED and user_email:
+        data = request.json or {}
+        try:
+            risk_score = int(data.get('risk_score', 0))
+        except (TypeError, ValueError):
+            risk_score = 0
+        save_reported_case(
+            user_email=user_email,
+            email_id=email_id,
+            sender=str(data.get('sender', ''))[:500],
+            subject=str(data.get('subject', ''))[:500],
+            risk_score=risk_score,
+        )
+
     return jsonify({"status": "success", "message": f"Payload {email_id} successfully dispatched to SOC."})
 
 
@@ -562,6 +664,32 @@ Return ONLY raw valid JSON. No markdown.
 """
     quiz = groq_json_call(prompt) or fallback
     return jsonify({"status": "success", "quiz": quiz})
+
+
+@app.route('/how-it-works')
+def how_it_works():
+    return render_template('how_it_works.html', logged_in='credentials' in session, active_page='how-it-works')
+
+
+@app.route('/settings')
+def settings():
+    if 'credentials' not in session:
+        return redirect('/')
+    return render_template('settings.html', logged_in=True, active_page='settings', user_email=session.get('user_email'))
+
+
+@app.route('/cases')
+def cases():
+    if 'credentials' not in session:
+        return redirect('/')
+    user_email = session.get('user_email')
+    return render_template(
+        'cases.html',
+        logged_in=True,
+        active_page='cases',
+        cases=list_reported_cases(user_email),
+        supabase_configured=SUPABASE_CONFIGURED,
+    )
 
 
 if __name__ == '__main__':

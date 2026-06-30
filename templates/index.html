@@ -1,777 +1,722 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GuardMail - Email Security Dashboard</title>
-    <meta name="description" content="GuardMail AI scans your Gmail inbox for phishing, spam, and spoofed senders, then teaches you to spot the warning signs with AI-generated threat reports and quizzes.">
-    <meta property="og:title" content="GuardMail AI - Email Security Dashboard">
-    <meta property="og:description" content="Scan your inbox for phishing, spam, and spoofed senders, and learn to recognize the warning signs.">
-    <meta property="og:type" content="website">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%9B%A1%EF%B8%8F</text></svg>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif; }
-        .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
-    </style>
-</head>
-<body class="bg-slate-950 text-slate-300 min-h-screen selection:bg-blue-500/30">
+{% extends "base.html" %}
+{% block content %}
 
-    {% if not logged_in %}
-    <div class="min-h-screen flex flex-col bg-slate-950 text-slate-300">
-        <header class="border-b border-slate-800/80 p-4">
-            <div class="max-w-6xl mx-auto flex items-center justify-between">
-                <div class="flex items-center space-x-2.5">
-                    <div class="bg-blue-600 text-white p-2 rounded-lg">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-                    <span class="font-bold text-lg tracking-tight text-white">GuardMail</span>
-                </div>
-                <span class="text-[11px] font-mono text-slate-500 border border-slate-800 rounded px-2 py-1">BETA</span>
-            </div>
-        </header>
-
-        <main class="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
-            <div class="inline-flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-full px-4 py-1.5 text-xs text-slate-400 mb-8">
-                <i class="fa-solid fa-shield-halved text-blue-400"></i>
-                <span>Free &middot; Read-only Gmail access &middot; Beta</span>
-            </div>
-
-            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white max-w-2xl leading-tight">
-                Stop phishing emails<br><span class="text-blue-400">before they stop you.</span>
-            </h1>
-            <p class="mt-5 max-w-md text-slate-400 leading-relaxed">
-                GuardMail scans your inbox for phishing, spam, and spoofed senders, then teaches you to spot the warning signs with AI-generated reports and quizzes.
-            </p>
-
-            <a href="/login" class="mt-8 inline-flex items-center space-x-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-blue-900/40 cursor-pointer">
-                <i class="fa-brands fa-google"></i>
-                <span>Sign in with Google</span>
-            </a>
-            <p class="mt-3 text-xs text-slate-500">Requested access: read-only Gmail</p>
-
-            <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full text-left">
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-                    <div class="text-rose-400 mb-2"><i class="fa-solid fa-mask"></i></div>
-                    <h3 class="text-sm font-semibold text-white mb-1">Spoofing detection</h3>
-                    <p class="text-xs text-slate-400 leading-relaxed">Flags senders impersonating brands you trust.</p>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-                    <div class="text-amber-400 mb-2"><i class="fa-solid fa-link"></i></div>
-                    <h3 class="text-sm font-semibold text-white mb-1">Link sandboxing</h3>
-                    <p class="text-xs text-slate-400 leading-relaxed">Flags risky URLs before you click them.</p>
-                </div>
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-                    <div class="text-purple-400 mb-2"><i class="fa-solid fa-graduation-cap"></i></div>
-                    <h3 class="text-sm font-semibold text-white mb-1">Learn as you go</h3>
-                    <p class="text-xs text-slate-400 leading-relaxed">AI quizzes teach you to spot scams yourself.</p>
-                </div>
-            </div>
-        </main>
+{% if not logged_in %}
+<main class="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
+    <div class="inline-flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-full px-4 py-1.5 text-xs text-slate-400 mb-8">
+        <i class="fa-solid fa-shield-halved text-blue-400"></i>
+        <span>Free &middot; Read-only Gmail access &middot; Beta</span>
     </div>
-    {% else %}
 
-    <script>
-        window.allEmails = {{ emails|tojson|safe if emails else '[]' }};
-        window.nextPageToken = {{ next_token|tojson|safe if next_token else '""' }};
-    </script>
+    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white max-w-2xl leading-tight">
+        Don't get hooked.<br><span class="text-blue-400">GuardMail spots phishing before you do.</span>
+    </h1>
+    <p class="mt-5 max-w-md text-slate-400 leading-relaxed">
+        AI-powered scanning catches spoofed senders and malicious links in your Gmail inbox, then teaches you to recognize them yourself — so eventually, you won't need us.
+    </p>
 
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md p-4 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 text-white p-2.5 rounded-xl">
-                    <i class="fa-solid fa-shield-halved text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-white tracking-tight">GuardMail</h1>
-                    <p class="text-xs text-slate-500">Connected to Gmail</p>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <div class="bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs text-emerald-400 flex items-center space-x-2 font-medium font-mono">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>LIVE</span>
-                </div>
-                <a href="/logout" class="text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg transition">
-                    <i class="fa-solid fa-right-from-bracket mr-1.5"></i>Sign Out
-                </a>
-            </div>
+    <a href="/login" class="mt-8 inline-flex items-center space-x-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-blue-900/40 cursor-pointer">
+        <i class="fa-brands fa-google"></i>
+        <span>Sign in with Google</span>
+    </a>
+    <p class="mt-3 text-xs text-slate-500">Requested access: read-only Gmail</p>
+
+    <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full text-left">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div class="text-rose-400 mb-2"><i class="fa-solid fa-mask"></i></div>
+            <h3 class="text-sm font-semibold text-white mb-1">Spoofing detection</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Flags senders impersonating brands you trust.</p>
         </div>
-    </header>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div class="text-amber-400 mb-2"><i class="fa-solid fa-link"></i></div>
+            <h3 class="text-sm font-semibold text-white mb-1">Link sandboxing</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Flags risky URLs before you click them.</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div class="text-purple-400 mb-2"><i class="fa-solid fa-graduation-cap"></i></div>
+            <h3 class="text-sm font-semibold text-white mb-1">Learn as you go</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">AI quizzes teach you to spot scams yourself.</p>
+        </div>
+    </div>
+</main>
+{% else %}
 
-    <main class="max-w-7xl mx-auto p-4 lg:p-6 space-y-6">
+<script>
+    window.allEmails = {{ emails|tojson|safe if emails else '[]' }};
+    window.nextPageToken = {{ next_token|tojson|safe if next_token else '""' }};
+</script>
 
-        <section class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
-                <div>
-                    <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Messages scanned</p>
-                    <p class="text-2xl font-bold font-mono text-white mt-1">{{ analytics.total }}</p>
-                </div>
-                <div class="p-2.5 bg-slate-800 rounded-xl text-slate-400"><i class="fa-solid fa-inbox text-lg"></i></div>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-rose-500/40 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
-                <div>
-                    <p class="text-[11px] uppercase tracking-wide text-rose-400 font-medium">Spoofed senders</p>
-                    <p class="text-2xl font-bold font-mono text-rose-400 mt-1">{{ analytics.spoofed }}</p>
-                </div>
-                <div class="p-2.5 bg-rose-500/10 rounded-xl text-rose-400"><i class="fa-solid fa-mask text-lg"></i></div>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-amber-500/40 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
-                <div>
-                    <p class="text-[11px] uppercase tracking-wide text-amber-400 font-medium">Reported cases</p>
-                    <p class="text-2xl font-bold font-mono text-amber-400 mt-1">{{ analytics.soc_cases }}</p>
-                </div>
-                <div class="p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><i class="fa-solid fa-flag text-lg"></i></div>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
-                <div>
-                    <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Scam rate</p>
-                    <p class="text-2xl font-bold font-mono text-white mt-1">{{ analytics.percentage }}%</p>
-                </div>
-                <div class="p-2.5 bg-slate-800 rounded-xl text-slate-400"><i class="fa-solid fa-chart-line text-lg"></i></div>
-            </div>
-        </section>
+<main class="max-w-7xl mx-auto p-4 lg:p-6 space-y-6">
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <section class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
+            <div>
+                <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Messages scanned</p>
+                <p class="text-2xl font-bold font-mono text-white mt-1">{{ analytics.total }}</p>
+            </div>
+            <div class="p-2.5 bg-slate-800 rounded-xl text-slate-400"><i class="fa-solid fa-inbox text-lg"></i></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-rose-500/40 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
+            <div>
+                <p class="text-[11px] uppercase tracking-wide text-rose-400 font-medium">Spoofed senders</p>
+                <p class="text-2xl font-bold font-mono text-rose-400 mt-1">{{ analytics.spoofed }}</p>
+            </div>
+            <div class="p-2.5 bg-rose-500/10 rounded-xl text-rose-400"><i class="fa-solid fa-mask text-lg"></i></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-amber-500/40 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
+            <div>
+                <p class="text-[11px] uppercase tracking-wide text-amber-400 font-medium">Reported cases</p>
+                <p class="text-2xl font-bold font-mono text-amber-400 mt-1">{{ analytics.soc_cases }}</p>
+            </div>
+            <div class="p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><i class="fa-solid fa-flag text-lg"></i></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
+            <div>
+                <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Scam rate</p>
+                <p class="text-2xl font-bold font-mono text-white mt-1">{{ analytics.percentage }}%</p>
+            </div>
+            <div class="p-2.5 bg-slate-800 rounded-xl text-slate-400"><i class="fa-solid fa-chart-line text-lg"></i></div>
+        </div>
+    </section>
 
-            <section class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
-                <div class="p-4 bg-slate-900 border-b border-slate-800 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h2 class="font-semibold text-slate-200 text-sm flex items-center space-x-2">
-                            <i class="fa-solid fa-inbox text-slate-500"></i>
-                            <span>Inbox</span>
-                        </h2>
-                        <button onclick="window.location.reload()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium px-2.5 py-1.5 rounded-lg transition cursor-pointer">
-                            <i class="fa-solid fa-arrow-rotate-right mr-1"></i> Refresh
-                        </button>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <section class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+            <div class="p-4 bg-slate-900 border-b border-slate-800 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h2 class="font-semibold text-slate-200 text-sm flex items-center space-x-2">
+                        <i class="fa-solid fa-inbox text-slate-500"></i>
+                        <span>Inbox</span>
+                    </h2>
+                    <button onclick="window.location.reload()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+                        <i class="fa-solid fa-arrow-rotate-right mr-1"></i> Refresh
+                    </button>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="inbox-search" oninput="applyFilters()" placeholder="Search sender, subject, body..."
+                               class="w-full text-xs bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <div class="relative flex-1">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                            <input type="text" id="inbox-search" oninput="applyFilters()" placeholder="Search sender, subject, body..."
-                                   class="w-full text-xs bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        </div>
-                        <select id="inbox-sort" onchange="applyFilters()" class="text-xs bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
-                            <option value="default">Newest</option>
-                            <option value="risk">Highest risk</option>
-                        </select>
+                    <select id="inbox-sort" onchange="applyFilters()" class="text-xs bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+                        <option value="default">Newest</option>
+                        <option value="risk">Highest risk</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="divide-y divide-slate-800 overflow-y-auto flex-1 min-h-[450px] max-h-[650px]">
+                {% if fetch_error %}
+                <div class="p-4 m-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs text-rose-400 flex items-start space-x-2">
+                    <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold">Couldn't load your inbox</p>
+                        <p class="mt-0.5">{{ fetch_error }}</p>
+                        <button onclick="window.location.reload()" class="mt-2 underline font-medium">Try again</button>
                     </div>
                 </div>
+                {% endif %}
 
-                <div class="divide-y divide-slate-800 overflow-y-auto flex-1 min-h-[450px] max-h-[650px]">
-                    {% if fetch_error %}
-                    <div class="p-4 m-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs text-rose-400 flex items-start space-x-2">
-                        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
-                        <div>
-                            <p class="font-semibold">Couldn't load your inbox</p>
-                            <p class="mt-0.5">{{ fetch_error }}</p>
-                            <button onclick="window.location.reload()" class="mt-2 underline font-medium">Try again</button>
-                        </div>
+                <div id="email-cards-container">
+                    {% if not fetch_error and emails|length == 0 %}
+                    <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
+                        <i class="fa-regular fa-folder-open text-3xl opacity-50"></i>
+                        <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages found. Once your inbox has mail, it'll show up here.</p>
                     </div>
                     {% endif %}
 
-                    <div id="email-cards-container">
-                        {% if not fetch_error and emails|length == 0 %}
-                        <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
-                            <i class="fa-regular fa-folder-open text-3xl opacity-50"></i>
-                            <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages found. Once your inbox has mail, it'll show up here.</p>
-                        </div>
-                        {% endif %}
+                    {% for email in emails %}
+                    <div onclick="selectEmail('{{ email.id }}')"
+                         id="email-card-{{ email.id }}"
+                         class="p-4 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 relative flex gap-3
+                                {% if email.initial_category == 'Scam Alert' %}border-rose-500
+                                {% elif email.initial_category == 'Spam' %}border-amber-500
+                                {% elif email.initial_category == 'High Priority' %}border-purple-500
+                                {% else %}border-transparent{% endif %}">
 
-                        {% for email in emails %}
-                        <div onclick="selectEmail('{{ email.id }}')"
-                             id="email-card-{{ email.id }}"
-                             class="p-4 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 relative flex gap-3
-                                    {% if email.initial_category == 'Scam Alert' %}border-rose-500
-                                    {% elif email.initial_category == 'Spam' %}border-amber-500
-                                    {% elif email.initial_category == 'High Priority' %}border-purple-500
-                                    {% else %}border-transparent{% endif %}">
+                        <div class="w-9 h-9 rounded-full {{ email.sender|avatar_color }} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">{{ email.sender|initials }}</div>
 
-                            <div class="w-9 h-9 rounded-full {{ email.sender|avatar_color }} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">{{ email.sender|initials }}</div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-sm font-medium text-slate-200 truncate max-w-[180px] block">{{ email.sender }}</span>
+                                <span class="text-[10px] text-slate-500 whitespace-nowrap ml-2">{{ email.date }}</span>
+                            </div>
 
-                            <div class="min-w-0 flex-1">
-                                <div class="flex justify-between items-start mb-1">
-                                    <span class="text-sm font-medium text-slate-200 truncate max-w-[180px] block">{{ email.sender }}</span>
-                                    <span class="text-[10px] text-slate-500 whitespace-nowrap ml-2">{{ email.date }}</span>
-                                </div>
+                            <h3 class="text-sm font-semibold text-white truncate mb-1">{{ email.subject if email.subject else '(No Subject)' }}</h3>
+                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ email.body }}</p>
 
-                                <h3 class="text-sm font-semibold text-white truncate mb-1">{{ email.subject if email.subject else '(No Subject)' }}</h3>
-                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ email.body }}</p>
-
-                                <div class="mt-3 flex items-center justify-between">
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold
-                                        {% if email.initial_category == 'Scam Alert' %}bg-rose-500/10 text-rose-400 border border-rose-500/30
-                                        {% elif email.initial_category == 'Spam' %}bg-amber-500/10 text-amber-400 border border-amber-500/30
-                                        {% elif email.initial_category == 'High Priority' %}bg-purple-500/10 text-purple-400 border border-purple-500/30
-                                        {% else %}bg-slate-800 text-slate-400 border border-slate-700{% endif %}">
-                                        {{ email.initial_category }}
-                                    </span>
-                                    <span class="text-xs font-medium font-mono text-slate-500">Risk: {{ email.risk_score }}%</span>
-                                </div>
+                            <div class="mt-3 flex items-center justify-between">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold
+                                    {% if email.initial_category == 'Scam Alert' %}bg-rose-500/10 text-rose-400 border border-rose-500/30
+                                    {% elif email.initial_category == 'Spam' %}bg-amber-500/10 text-amber-400 border border-amber-500/30
+                                    {% elif email.initial_category == 'High Priority' %}bg-purple-500/10 text-purple-400 border border-purple-500/30
+                                    {% else %}bg-slate-800 text-slate-400 border border-slate-700{% endif %}">
+                                    {{ email.initial_category }}
+                                </span>
+                                <span class="text-xs font-medium font-mono text-slate-500">Risk: {{ email.risk_score }}%</span>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
-
-                    <div id="load-more-container" class="p-3 bg-slate-900 text-center {% if not next_token %}hidden{% endif %}">
-                        <button onclick="loadNextBatch()" id="load-more-btn" class="w-full py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition cursor-pointer flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-chevron-down text-xs"></i>
-                            <span>Load more</span>
-                        </button>
-                        <div id="load-more-error" class="hidden mt-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2 text-left">
-                            <i class="fa-solid fa-circle-exclamation mr-1"></i>
-                            <span id="load-more-error-text"></span>
-                            <button onclick="loadNextBatch()" class="ml-1 underline font-medium">Try again</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="lg:col-span-7 flex flex-col space-y-6">
-
-                <div id="viewer-pane" class="bg-slate-900 border border-slate-800 rounded-xl p-6 min-h-[160px] flex flex-col justify-center items-center text-center text-slate-500 transition">
-                    <i class="fa-regular fa-envelope-open text-3xl mb-3 text-slate-700"></i>
-                    <p class="text-sm max-w-sm leading-relaxed">Select a message from the inbox to view its contents and safety details.</p>
+                    {% endfor %}
                 </div>
 
-                <div id="sandbox-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-5 transition duration-200">
-                    <div class="text-xs font-semibold text-slate-300 mb-3 flex items-center space-x-2">
-                        <i class="fa-solid fa-link text-amber-400"></i>
-                        <span>Links in this message</span>
+                <div id="load-more-container" class="p-3 bg-slate-900 text-center {% if not next_token %}hidden{% endif %}">
+                    <button onclick="loadNextBatch()" id="load-more-btn" class="w-full py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition cursor-pointer flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                        <span>Load more</span>
+                    </button>
+                    <div id="load-more-error" class="hidden mt-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2 text-left">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i>
+                        <span id="load-more-error-text"></span>
+                        <button onclick="loadNextBatch()" class="ml-1 underline font-medium">Try again</button>
                     </div>
-                    <div id="sandbox-links-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+
+            <div id="viewer-pane" class="bg-slate-900 border border-slate-800 rounded-xl p-6 min-h-[160px] flex flex-col justify-center items-center text-center text-slate-500 transition">
+                <i class="fa-regular fa-envelope-open text-3xl mb-3 text-slate-700"></i>
+                <p class="text-sm max-w-sm leading-relaxed">Select a message from the inbox to view its contents and safety details.</p>
+            </div>
+
+            <div id="sandbox-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-5 transition duration-200">
+                <div class="text-xs font-semibold text-slate-300 mb-3 flex items-center space-x-2">
+                    <i class="fa-solid fa-link text-amber-400"></i>
+                    <span>Links in this message</span>
+                </div>
+                <div id="sandbox-links-list" class="space-y-2"></div>
+            </div>
+
+            <div id="ai-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition duration-200">
+                <div class="flex items-center space-x-2 text-slate-200 font-semibold text-sm mb-4">
+                    <i class="fa-solid fa-magnifying-glass-chart text-blue-400"></i>
+                    <span>AI Analysis</span>
                 </div>
 
-                <div id="ai-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition duration-200">
-                    <div class="flex items-center space-x-2 text-slate-200 font-semibold text-sm mb-4">
-                        <i class="fa-solid fa-magnifying-glass-chart text-blue-400"></i>
-                        <span>AI Analysis</span>
-                    </div>
+                <div id="ai-loading" class="py-8 text-center text-slate-500 space-y-2">
+                    <i class="fa-solid fa-circle-notch text-xl text-blue-400 animate-spin"></i>
+                    <p class="text-xs">Analyzing this message...</p>
+                </div>
 
-                    <div id="ai-loading" class="py-8 text-center text-slate-500 space-y-2">
-                        <i class="fa-solid fa-circle-notch text-xl text-blue-400 animate-spin"></i>
-                        <p class="text-xs">Analyzing this message...</p>
-                    </div>
-
-                    <div id="ai-content" class="hidden space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <label class="text-xs font-medium text-slate-500 block mb-1">Threat type</label>
-                                <div id="ai-threat-type" class="inline-block bg-rose-500/10 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-lg font-semibold text-xs">
-                                    --
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-800 pt-3">
-                            <label class="text-xs font-medium text-slate-500 block mb-2">Warning signs</label>
-                            <div id="ai-indicators-box" class="grid grid-cols-1 gap-2"></div>
-                        </div>
-
-                        <div class="border-t border-slate-800 pt-3">
-                            <label class="text-xs font-medium text-slate-500 block mb-1">Summary</label>
-                            <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700 text-sm text-slate-300 leading-relaxed" id="ai-report">
+                <div id="ai-content" class="hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 block mb-1">Threat type</label>
+                            <div id="ai-threat-type" class="inline-block bg-rose-500/10 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-lg font-semibold text-xs">
                                 --
                             </div>
                         </div>
                     </div>
 
-                    <div id="ai-error" class="hidden py-6 text-center text-slate-500 space-y-2">
-                        <i class="fa-solid fa-triangle-exclamation text-xl text-amber-400"></i>
-                        <p class="text-xs" id="ai-error-text">Couldn't complete analysis. Please try again.</p>
-                        <button id="ai-retry-btn" class="text-xs font-medium text-blue-400 underline">Try again</button>
+                    <div class="border-t border-slate-800 pt-3">
+                        <label class="text-xs font-medium text-slate-500 block mb-2">Warning signs</label>
+                        <div id="ai-indicators-box" class="grid grid-cols-1 gap-2"></div>
                     </div>
-                </div>
 
-                <div id="quiz-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition duration-200">
-                    <div class="flex items-center space-x-2 text-slate-200 font-semibold text-sm mb-3">
-                        <i class="fa-solid fa-graduation-cap text-purple-400"></i>
-                        <span>Quick Quiz</span>
-                    </div>
-                    <div id="quiz-loading" class="py-4 text-center text-slate-500 text-xs">
-                        <i class="fa-solid fa-spinner fa-spin mr-2"></i>Building a question...
-                    </div>
-                    <div id="quiz-content" class="hidden space-y-4">
-                        <p id="quiz-question-text" class="text-sm font-medium text-slate-200 leading-relaxed"></p>
-                        <div id="quiz-options-box" class="grid grid-cols-1 gap-2"></div>
-                        <div id="quiz-feedback" class="hidden text-xs p-3.5 rounded-lg border"></div>
-                    </div>
-                    <div id="quiz-error" class="hidden py-4 text-center text-slate-500 space-y-2">
-                        <p class="text-xs">Couldn't load the quiz right now.</p>
-                        <button id="quiz-retry-btn" class="text-xs font-medium text-blue-400 underline">Try again</button>
-                    </div>
-                </div>
-
-            </section>
-        </div>
-    </main>
-
-    <script>
-        let activeQuizData = null;
-        let activeQuizEmail = null;
-        const aiResultsCache = new Map();
-        const quizResultsCache = new Map();
-
-        function escapeHtml(str) {
-            return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
-
-        const AVATAR_COLORS = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'];
-
-        function getInitials(sender) {
-            const name = (sender || '').split('<')[0].trim();
-            if (name) return name[0].toUpperCase();
-            const match = (sender || '').match(/<([^>]+)>/);
-            return ((match ? match[1] : sender) || '?')[0].toUpperCase();
-        }
-
-        function getAvatarColor(sender) {
-            let sum = 0;
-            for (const c of (sender || '')) sum += c.charCodeAt(0);
-            return AVATAR_COLORS[sum % AVATAR_COLORS.length];
-        }
-
-        function formatRelativeTime(dateStr) {
-            if (!dateStr) return '';
-            const date = new Date(dateStr);
-            if (isNaN(date.getTime())) return dateStr;
-            const diffMin = Math.round((Date.now() - date.getTime()) / 60000);
-            if (diffMin < 1) return 'just now';
-            if (diffMin < 60) return `${diffMin}m ago`;
-            const diffHr = Math.round(diffMin / 60);
-            if (diffHr < 24) return `${diffHr}h ago`;
-            const diffDay = Math.round(diffHr / 24);
-            if (diffDay < 7) return `${diffDay}d ago`;
-            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        }
-
-        function categoryClasses(category) {
-            if (category === 'Scam Alert') return { border: 'border-rose-500', badge: 'bg-rose-500/10 text-rose-400 border border-rose-500/30' };
-            if (category === 'Spam') return { border: 'border-amber-500', badge: 'bg-amber-500/10 text-amber-400 border border-amber-500/30' };
-            if (category === 'High Priority') return { border: 'border-purple-500', badge: 'bg-purple-500/10 text-purple-400 border border-purple-500/30' };
-            return { border: 'border-transparent', badge: 'bg-slate-800 text-slate-400 border border-slate-700' };
-        }
-
-        function emailCardHtml(email) {
-            const { border, badge } = categoryClasses(email.initial_category);
-            const cleanSender = escapeHtml(email.sender);
-            const cleanSubject = escapeHtml(email.subject || '(No Subject)');
-            const cleanSnippet = escapeHtml((email.body || '').substring(0, 160));
-            const cleanInitials = escapeHtml(getInitials(email.sender));
-            return `
-                <div onclick="selectEmail('${email.id}')"
-                     id="email-card-${email.id}"
-                     class="p-4 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 relative flex gap-3 ${border}">
-                    <div class="w-9 h-9 rounded-full ${getAvatarColor(email.sender)} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">${cleanInitials}</div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-sm font-medium text-slate-200 truncate max-w-[180px] block">${cleanSender}</span>
-                            <span class="text-[10px] text-slate-500 whitespace-nowrap ml-2">${formatRelativeTime(email.date)}</span>
-                        </div>
-                        <h3 class="text-sm font-semibold text-white truncate mb-1">${cleanSubject}</h3>
-                        <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${cleanSnippet}</p>
-                        <div class="mt-3 flex items-center justify-between">
-                            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge}">${email.initial_category}</span>
-                            <span class="text-xs font-medium font-mono text-slate-500">Risk: ${email.risk_score}%</span>
+                    <div class="border-t border-slate-800 pt-3">
+                        <label class="text-xs font-medium text-slate-500 block mb-1">Summary</label>
+                        <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700 text-sm text-slate-300 leading-relaxed" id="ai-report">
+                            --
                         </div>
                     </div>
                 </div>
-            `;
-        }
 
-        function renderInboxList(emailsToRender) {
-            const container = document.getElementById('email-cards-container');
-            if (emailsToRender.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
-                        <i class="fa-solid fa-magnifying-glass text-3xl opacity-50"></i>
-                        <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages match your search.</p>
+                <div id="ai-error" class="hidden py-6 text-center text-slate-500 space-y-2">
+                    <i class="fa-solid fa-triangle-exclamation text-xl text-amber-400"></i>
+                    <p class="text-xs" id="ai-error-text">Couldn't complete analysis. Please try again.</p>
+                    <button id="ai-retry-btn" class="text-xs font-medium text-blue-400 underline">Try again</button>
+                </div>
+            </div>
+
+            <div id="quiz-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition duration-200">
+                <div class="flex items-center space-x-2 text-slate-200 font-semibold text-sm mb-3">
+                    <i class="fa-solid fa-graduation-cap text-purple-400"></i>
+                    <span>Quick Quiz</span>
+                </div>
+                <div id="quiz-loading" class="py-4 text-center text-slate-500 text-xs">
+                    <i class="fa-solid fa-spinner fa-spin mr-2"></i>Building a question...
+                </div>
+                <div id="quiz-content" class="hidden space-y-4">
+                    <p id="quiz-question-text" class="text-sm font-medium text-slate-200 leading-relaxed"></p>
+                    <div id="quiz-options-box" class="grid grid-cols-1 gap-2"></div>
+                    <div id="quiz-feedback" class="hidden text-xs p-3.5 rounded-lg border"></div>
+                </div>
+                <div id="quiz-error" class="hidden py-4 text-center text-slate-500 space-y-2">
+                    <p class="text-xs">Couldn't load the quiz right now.</p>
+                    <button id="quiz-retry-btn" class="text-xs font-medium text-blue-400 underline">Try again</button>
+                </div>
+            </div>
+
+        </section>
+    </div>
+</main>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if logged_in %}
+<script>
+    let activeQuizData = null;
+    let activeQuizEmail = null;
+    const aiResultsCache = new Map();
+    const quizResultsCache = new Map();
+
+    function escapeHtml(str) {
+        return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    const AVATAR_COLORS = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'];
+
+    function getInitials(sender) {
+        const name = (sender || '').split('<')[0].trim();
+        if (name) return name[0].toUpperCase();
+        const match = (sender || '').match(/<([^>]+)>/);
+        return ((match ? match[1] : sender) || '?')[0].toUpperCase();
+    }
+
+    function getAvatarColor(sender) {
+        let sum = 0;
+        for (const c of (sender || '')) sum += c.charCodeAt(0);
+        return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+    }
+
+    function formatRelativeTime(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        const diffMin = Math.round((Date.now() - date.getTime()) / 60000);
+        if (diffMin < 1) return 'just now';
+        if (diffMin < 60) return `${diffMin}m ago`;
+        const diffHr = Math.round(diffMin / 60);
+        if (diffHr < 24) return `${diffHr}h ago`;
+        const diffDay = Math.round(diffHr / 24);
+        if (diffDay < 7) return `${diffDay}d ago`;
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function categoryClasses(category) {
+        if (category === 'Scam Alert') return { border: 'border-rose-500', badge: 'bg-rose-500/10 text-rose-400 border border-rose-500/30' };
+        if (category === 'Spam') return { border: 'border-amber-500', badge: 'bg-amber-500/10 text-amber-400 border border-amber-500/30' };
+        if (category === 'High Priority') return { border: 'border-purple-500', badge: 'bg-purple-500/10 text-purple-400 border border-purple-500/30' };
+        return { border: 'border-transparent', badge: 'bg-slate-800 text-slate-400 border border-slate-700' };
+    }
+
+    function emailCardHtml(email) {
+        const { border, badge } = categoryClasses(email.initial_category);
+        const cleanSender = escapeHtml(email.sender);
+        const cleanSubject = escapeHtml(email.subject || '(No Subject)');
+        const cleanSnippet = escapeHtml((email.body || '').substring(0, 160));
+        const cleanInitials = escapeHtml(getInitials(email.sender));
+        return `
+            <div onclick="selectEmail('${email.id}')"
+                 id="email-card-${email.id}"
+                 class="p-4 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 relative flex gap-3 ${border}">
+                <div class="w-9 h-9 rounded-full ${getAvatarColor(email.sender)} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">${cleanInitials}</div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-sm font-medium text-slate-200 truncate max-w-[180px] block">${cleanSender}</span>
+                        <span class="text-[10px] text-slate-500 whitespace-nowrap ml-2">${formatRelativeTime(email.date)}</span>
                     </div>
-                `;
-                return;
-            }
-            container.innerHTML = emailsToRender.map(emailCardHtml).join('');
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const selectedId = urlParams.get('emailId');
-            if (selectedId) {
-                const card = document.getElementById(`email-card-${selectedId}`);
-                if (card) card.classList.add('bg-slate-800', 'ring-1', 'ring-slate-600');
-            }
-        }
-
-        function applyFilters() {
-            const query = (document.getElementById('inbox-search').value || '').trim().toLowerCase();
-            const sortMode = document.getElementById('inbox-sort').value;
-
-            let filtered = window.allEmails.filter(e => {
-                if (!query) return true;
-                return (e.sender || '').toLowerCase().includes(query)
-                    || (e.subject || '').toLowerCase().includes(query)
-                    || (e.body || '').toLowerCase().includes(query);
-            });
-
-            if (sortMode === 'risk') {
-                filtered = filtered.slice().sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
-            }
-
-            renderInboxList(filtered);
-        }
-
-        function selectEmail(id, triggerUrlUpdate = true) {
-            const email = window.allEmails.find(e => e.id === id);
-            if (!email) return;
-
-            window.allEmails.forEach(e => {
-                const card = document.getElementById(`email-card-${e.id}`);
-                if (card) card.classList.remove('bg-slate-800', 'ring-1', 'ring-slate-600');
-            });
-
-            const activeCard = document.getElementById(`email-card-${id}`);
-            if (activeCard) activeCard.classList.add('bg-slate-800', 'ring-1', 'ring-slate-600');
-
-            if (triggerUrlUpdate) {
-                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?emailId=' + id;
-                window.history.pushState({ path: newUrl }, '', newUrl);
-            }
-
-            const viewerPane = document.getElementById('viewer-pane');
-            viewerPane.className = "bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between text-left";
-            viewerPane.innerHTML = `
-                <div>
-                    <div class="border-b border-slate-800 pb-3 mb-3 flex justify-between items-start">
-                        <div class="flex items-start gap-3 max-w-[75%] min-w-0">
-                            <div id="view-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"></div>
-                            <div class="min-w-0">
-                                <div class="text-xs text-slate-500 truncate"><span class="font-medium text-slate-600 mr-1">From:</span> <span id="view-sender-text"></span></div>
-                                <div class="text-sm text-slate-200 mt-1.5"><span class="font-medium text-slate-600 mr-1">Subject:</span> <span id="view-subject-text"></span></div>
-                                <div class="text-xs text-slate-500 mt-1"><span class="font-medium text-slate-600 mr-1">Received:</span> <span id="view-date-text"></span></div>
-                            </div>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <span class="text-xs font-medium text-slate-500 block">Risk Score</span>
-                            <span class="text-xl font-bold font-mono ${email.risk_score >= 70 ? 'text-rose-400' : email.risk_score >= 40 ? 'text-amber-400' : 'text-emerald-400'}">${email.risk_score || 10}%</span>
-                        </div>
+                    <h3 class="text-sm font-semibold text-white truncate mb-1">${cleanSubject}</h3>
+                    <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${cleanSnippet}</p>
+                    <div class="mt-3 flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge}">${email.initial_category}</span>
+                        <span class="text-xs font-medium font-mono text-slate-500">Risk: ${email.risk_score}%</span>
                     </div>
+                </div>
+            </div>
+        `;
+    }
 
-                    ${email.spoofing_detected ? `
-                    <div class="bg-rose-500/10 border border-rose-500/30 px-3 py-2 rounded-lg text-xs text-rose-400 flex items-center space-x-2 mb-4">
-                        <i class="fa-solid fa-mask"></i>
-                        <span><strong>Possible spoofing:</strong> the sender name doesn't match the actual email domain.</span>
-                    </div>
-                    ` : ''}
-
-                    <div id="email-body-content-target" class="max-h-[380px] overflow-y-auto pr-2 text-sm text-slate-400 whitespace-pre-line leading-relaxed mb-6 bg-slate-800/50 p-3 rounded-lg border border-slate-700"></div>
-
-                    <div class="border-t border-slate-800 pt-4 mt-2 flex justify-between items-center">
-                        <span class="text-xs font-medium text-slate-500">Actions</span>
-                        <button id="soc-btn-${email.id}" onclick="dispatchSocReport('${email.id}')"
-                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition cursor-pointer ${email.soc_reported ? 'opacity-60 pointer-events-none border-slate-700 text-slate-500 bg-slate-800' : ''}">
-                            <i class="fa-solid fa-flag mr-1.5"></i>${email.soc_reported ? 'Reported' : 'Report this email'}
-                        </button>
-                    </div>
-                    <div id="soc-error-${email.id}" class="hidden mt-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2">
-                        <i class="fa-solid fa-circle-exclamation mr-1"></i>Couldn't send the report. <button onclick="dispatchSocReport('${email.id}')" class="underline font-medium">Try again</button>
-                    </div>
+    function renderInboxList(emailsToRender) {
+        const container = document.getElementById('email-cards-container');
+        if (emailsToRender.length === 0) {
+            container.innerHTML = `
+                <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
+                    <i class="fa-solid fa-magnifying-glass text-3xl opacity-50"></i>
+                    <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages match your search.</p>
                 </div>
             `;
+            return;
+        }
+        container.innerHTML = emailsToRender.map(emailCardHtml).join('');
 
-            // Assign via safe structural property setters rather than string template literals
-            document.getElementById('view-sender-text').innerText = email.sender || 'Unknown Sender';
-            document.getElementById('view-subject-text').innerText = email.subject || '(No Subject)';
-            document.getElementById('view-date-text').innerText = formatRelativeTime(email.date) || 'Unknown';
-            document.getElementById('email-body-content-target').textContent = email.body || '';
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedId = urlParams.get('emailId');
+        if (selectedId) {
+            const card = document.getElementById(`email-card-${selectedId}`);
+            if (card) card.classList.add('bg-slate-800', 'ring-1', 'ring-slate-600');
+        }
+    }
 
-            const avatarEl = document.getElementById('view-avatar');
-            avatarEl.classList.add(getAvatarColor(email.sender));
-            avatarEl.innerText = getInitials(email.sender);
+    function applyFilters() {
+        const query = (document.getElementById('inbox-search').value || '').trim().toLowerCase();
+        const sortMode = document.getElementById('inbox-sort').value;
 
-            const sandboxPane = document.getElementById('sandbox-pane');
-            const sandboxLinksList = document.getElementById('sandbox-links-list');
+        let filtered = window.allEmails.filter(e => {
+            if (!query) return true;
+            return (e.sender || '').toLowerCase().includes(query)
+                || (e.subject || '').toLowerCase().includes(query)
+                || (e.body || '').toLowerCase().includes(query);
+        });
 
-            if (email.links && email.links.length > 0) {
-                sandboxPane.classList.remove('hidden');
-                sandboxLinksList.innerHTML = email.links.map(l => {
-                    const cleanUrl = l.url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    return `
-                    <div class="bg-slate-800/50 p-2.5 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-2
-                                ${l.safety_status.includes('Dangerous') ? 'border-rose-500/30 bg-rose-500/10' : 'border-slate-700'}">
-                        <span class="text-slate-400 truncate max-w-md break-all">${cleanUrl}</span>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap
-                                    ${l.safety_status.includes('Dangerous') ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' : 'bg-slate-800 text-slate-400'}">
-                            ${l.safety_status}
-                        </span>
+        if (sortMode === 'risk') {
+            filtered = filtered.slice().sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
+        }
+
+        renderInboxList(filtered);
+    }
+
+    function selectEmail(id, triggerUrlUpdate = true) {
+        const email = window.allEmails.find(e => e.id === id);
+        if (!email) return;
+
+        window.allEmails.forEach(e => {
+            const card = document.getElementById(`email-card-${e.id}`);
+            if (card) card.classList.remove('bg-slate-800', 'ring-1', 'ring-slate-600');
+        });
+
+        const activeCard = document.getElementById(`email-card-${id}`);
+        if (activeCard) activeCard.classList.add('bg-slate-800', 'ring-1', 'ring-slate-600');
+
+        if (triggerUrlUpdate) {
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?emailId=' + id;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+        }
+
+        const viewerPane = document.getElementById('viewer-pane');
+        viewerPane.className = "bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between text-left";
+        viewerPane.innerHTML = `
+            <div>
+                <div class="border-b border-slate-800 pb-3 mb-3 flex justify-between items-start">
+                    <div class="flex items-start gap-3 max-w-[75%] min-w-0">
+                        <div id="view-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"></div>
+                        <div class="min-w-0">
+                            <div class="text-xs text-slate-500 truncate"><span class="font-medium text-slate-600 mr-1">From:</span> <span id="view-sender-text"></span></div>
+                            <div class="text-sm text-slate-200 mt-1.5"><span class="font-medium text-slate-600 mr-1">Subject:</span> <span id="view-subject-text"></span></div>
+                            <div class="text-xs text-slate-500 mt-1"><span class="font-medium text-slate-600 mr-1">Received:</span> <span id="view-date-text"></span></div>
+                        </div>
                     </div>
-                `}).join('');
-            } else {
-                sandboxPane.classList.add('hidden');
-            }
+                    <div class="text-right flex-shrink-0">
+                        <span class="text-xs font-medium text-slate-500 block">Risk Score</span>
+                        <span class="text-xl font-bold font-mono ${email.risk_score >= 70 ? 'text-rose-400' : email.risk_score >= 40 ? 'text-amber-400' : 'text-emerald-400'}">${email.risk_score || 10}%</span>
+                    </div>
+                </div>
 
-            const aiPane = document.getElementById('ai-pane');
-            const aiLoading = document.getElementById('ai-loading');
-            const aiContent = document.getElementById('ai-content');
-            const aiError = document.getElementById('ai-error');
-            const quizPane = document.getElementById('quiz-pane');
+                ${email.spoofing_detected ? `
+                <div class="bg-rose-500/10 border border-rose-500/30 px-3 py-2 rounded-lg text-xs text-rose-400 flex items-center space-x-2 mb-4">
+                    <i class="fa-solid fa-mask"></i>
+                    <span><strong>Possible spoofing:</strong> the sender name doesn't match the actual email domain.</span>
+                </div>
+                ` : ''}
 
-            quizPane.classList.add('hidden');
+                <div id="email-body-content-target" class="max-h-[380px] overflow-y-auto pr-2 text-sm text-slate-400 whitespace-pre-line leading-relaxed mb-6 bg-slate-800/50 p-3 rounded-lg border border-slate-700"></div>
 
-            if (email.initial_category === 'Scam Alert' || email.risk_score >= 50) {
-                runAiAnalysis(email);
-                document.getElementById('ai-retry-btn').onclick = () => runAiAnalysis(email);
-            } else {
-                aiPane.classList.add('hidden');
-            }
+                <div class="border-t border-slate-800 pt-4 mt-2 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Actions</span>
+                    <button id="soc-btn-${email.id}" onclick="dispatchSocReport('${email.id}')"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition cursor-pointer ${email.soc_reported ? 'opacity-60 pointer-events-none border-slate-700 text-slate-500 bg-slate-800' : ''}">
+                        <i class="fa-solid fa-flag mr-1.5"></i>${email.soc_reported ? 'Reported' : 'Report this email'}
+                    </button>
+                </div>
+                <div id="soc-error-${email.id}" class="hidden mt-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>Couldn't send the report. <button onclick="dispatchSocReport('${email.id}')" class="underline font-medium">Try again</button>
+                </div>
+            </div>
+        `;
+
+        // Assign via safe structural property setters rather than string template literals
+        document.getElementById('view-sender-text').innerText = email.sender || 'Unknown Sender';
+        document.getElementById('view-subject-text').innerText = email.subject || '(No Subject)';
+        document.getElementById('view-date-text').innerText = formatRelativeTime(email.date) || 'Unknown';
+        document.getElementById('email-body-content-target').textContent = email.body || '';
+
+        const avatarEl = document.getElementById('view-avatar');
+        avatarEl.classList.add(getAvatarColor(email.sender));
+        avatarEl.innerText = getInitials(email.sender);
+
+        const sandboxPane = document.getElementById('sandbox-pane');
+        const sandboxLinksList = document.getElementById('sandbox-links-list');
+
+        if (email.links && email.links.length > 0) {
+            sandboxPane.classList.remove('hidden');
+            sandboxLinksList.innerHTML = email.links.map(l => {
+                const cleanUrl = l.url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `
+                <div class="bg-slate-800/50 p-2.5 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-2
+                            ${l.safety_status.includes('Dangerous') ? 'border-rose-500/30 bg-rose-500/10' : 'border-slate-700'}">
+                    <span class="text-slate-400 truncate max-w-md break-all">${cleanUrl}</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap
+                                ${l.safety_status.includes('Dangerous') ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' : 'bg-slate-800 text-slate-400'}">
+                        ${l.safety_status}
+                    </span>
+                </div>
+            `}).join('');
+        } else {
+            sandboxPane.classList.add('hidden');
         }
 
-        function renderAiResult(report) {
-            document.getElementById('ai-loading').classList.add('hidden');
-            document.getElementById('ai-content').classList.remove('hidden');
+        const aiPane = document.getElementById('ai-pane');
+        const aiLoading = document.getElementById('ai-loading');
+        const aiContent = document.getElementById('ai-content');
+        const aiError = document.getElementById('ai-error');
+        const quizPane = document.getElementById('quiz-pane');
 
-            document.getElementById('ai-threat-type').innerText = report.threat_type || "Unclassified";
-            document.getElementById('ai-report').innerText = report.educational_report || "No summary available.";
+        quizPane.classList.add('hidden');
 
-            const indicatorsBox = document.getElementById('ai-indicators-box');
-            indicatorsBox.innerHTML = '';
-            if (report.indicators && report.indicators.length > 0) {
-                report.indicators.forEach(ind => {
-                    const indicatorBadge = document.createElement('div');
-                    indicatorBadge.className = "flex items-center space-x-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-lg";
-                    indicatorBadge.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-400"></i><span id="ind-text-node"></span>`;
-                    indicatorBadge.querySelector('#ind-text-node').innerText = ind;
-                    indicatorBadge.querySelector('#ind-text-node').removeAttribute('id');
-                    indicatorsBox.appendChild(indicatorBadge);
-                });
-            } else {
-                indicatorsBox.innerHTML = '<div class="text-slate-500 text-xs italic">No specific indicators listed.</div>';
-            }
+        if (email.initial_category === 'Scam Alert' || email.risk_score >= 50) {
+            runAiAnalysis(email);
+            document.getElementById('ai-retry-btn').onclick = () => runAiAnalysis(email);
+        } else {
+            aiPane.classList.add('hidden');
+        }
+    }
+
+    function renderAiResult(report) {
+        document.getElementById('ai-loading').classList.add('hidden');
+        document.getElementById('ai-content').classList.remove('hidden');
+
+        document.getElementById('ai-threat-type').innerText = report.threat_type || "Unclassified";
+        document.getElementById('ai-report').innerText = report.educational_report || "No summary available.";
+
+        const indicatorsBox = document.getElementById('ai-indicators-box');
+        indicatorsBox.innerHTML = '';
+        if (report.indicators && report.indicators.length > 0) {
+            report.indicators.forEach(ind => {
+                const indicatorBadge = document.createElement('div');
+                indicatorBadge.className = "flex items-center space-x-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-lg";
+                indicatorBadge.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-400"></i><span id="ind-text-node"></span>`;
+                indicatorBadge.querySelector('#ind-text-node').innerText = ind;
+                indicatorBadge.querySelector('#ind-text-node').removeAttribute('id');
+                indicatorsBox.appendChild(indicatorBadge);
+            });
+        } else {
+            indicatorsBox.innerHTML = '<div class="text-slate-500 text-xs italic">No specific indicators listed.</div>';
+        }
+    }
+
+    function runAiAnalysis(email) {
+        const aiPane = document.getElementById('ai-pane');
+        const aiLoading = document.getElementById('ai-loading');
+        const aiContent = document.getElementById('ai-content');
+        const aiError = document.getElementById('ai-error');
+        const aiErrorText = document.getElementById('ai-error-text');
+
+        aiPane.classList.remove('hidden');
+        aiError.classList.add('hidden');
+
+        if (aiResultsCache.has(email.id)) {
+            aiLoading.classList.add('hidden');
+            renderAiResult(aiResultsCache.get(email.id));
+            triggerQuizModule(email);
+            return;
         }
 
-        function runAiAnalysis(email) {
-            const aiPane = document.getElementById('ai-pane');
-            const aiLoading = document.getElementById('ai-loading');
-            const aiContent = document.getElementById('ai-content');
-            const aiError = document.getElementById('ai-error');
-            const aiErrorText = document.getElementById('ai-error-text');
+        aiLoading.classList.remove('hidden');
+        aiContent.classList.add('hidden');
 
-            aiPane.classList.remove('hidden');
-            aiError.classList.add('hidden');
-
-            if (aiResultsCache.has(email.id)) {
-                aiLoading.classList.add('hidden');
-                renderAiResult(aiResultsCache.get(email.id));
-                triggerQuizModule(email);
-                return;
-            }
-
-            aiLoading.classList.remove('hidden');
+        fetch(`/analyze/${email.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sender: email.sender, subject: email.subject, body: email.body })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            const report = data.report || {};
+            aiResultsCache.set(email.id, report);
+            renderAiResult(report);
+            triggerQuizModule(email);
+        })
+        .catch(err => {
+            aiLoading.classList.add('hidden');
             aiContent.classList.add('hidden');
+            aiError.classList.remove('hidden');
+            aiErrorText.innerText = "Couldn't complete analysis (" + err.message + "). Please try again.";
+        });
+    }
 
-            fetch(`/analyze/${email.id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sender: email.sender, subject: email.subject, body: email.body })
-            })
+    function loadNextBatch() {
+        if (!window.nextPageToken) return;
+
+        const loadBtn = document.getElementById('load-more-btn');
+        const container = document.getElementById('load-more-container');
+        const errorBox = document.getElementById('load-more-error');
+        const errorText = document.getElementById('load-more-error-text');
+        const originalInner = loadBtn.innerHTML;
+
+        errorBox.classList.add('hidden');
+        loadBtn.disabled = true;
+        loadBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs mr-1.5"></i><span>Loading...</span>`;
+
+        fetch(`/api/feed-state?pageToken=${window.nextPageToken}`)
             .then(res => {
                 if (!res.ok) throw new Error(`Server responded with ${res.status}`);
                 return res.json();
             })
             .then(data => {
-                const report = data.report || {};
-                aiResultsCache.set(email.id, report);
-                renderAiResult(report);
-                triggerQuizModule(email);
-            })
-            .catch(err => {
-                aiLoading.classList.add('hidden');
-                aiContent.classList.add('hidden');
-                aiError.classList.remove('hidden');
-                aiErrorText.innerText = "Couldn't complete analysis (" + err.message + "). Please try again.";
-            });
-        }
+                loadBtn.disabled = false;
+                loadBtn.innerHTML = originalInner;
 
-        function loadNextBatch() {
-            if (!window.nextPageToken) return;
-
-            const loadBtn = document.getElementById('load-more-btn');
-            const container = document.getElementById('load-more-container');
-            const errorBox = document.getElementById('load-more-error');
-            const errorText = document.getElementById('load-more-error-text');
-            const originalInner = loadBtn.innerHTML;
-
-            errorBox.classList.add('hidden');
-            loadBtn.disabled = true;
-            loadBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs mr-1.5"></i><span>Loading...</span>`;
-
-            fetch(`/api/feed-state?pageToken=${window.nextPageToken}`)
-                .then(res => {
-                    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-                    return res.json();
-                })
-                .then(data => {
-                    loadBtn.disabled = false;
-                    loadBtn.innerHTML = originalInner;
-
-                    if (data.error) {
-                        errorBox.classList.remove('hidden');
-                        errorText.innerText = data.error;
-                        return;
-                    }
-
-                    if (data.emails && data.emails.length > 0) {
-                        data.emails.forEach(email => {
-                            if (!window.allEmails.some(existing => existing.id === email.id)) {
-                                window.allEmails.push(email);
-                            }
-                        });
-                        applyFilters();
-                    }
-
-                    window.nextPageToken = data.next_token || '';
-                    if (!window.nextPageToken) {
-                        container.classList.add('hidden');
-                    }
-                })
-                .catch(err => {
-                    loadBtn.disabled = false;
-                    loadBtn.innerHTML = originalInner;
+                if (data.error) {
                     errorBox.classList.remove('hidden');
-                    errorText.innerText = "Couldn't load more messages (" + err.message + ").";
-                });
-        }
+                    errorText.innerText = data.error;
+                    return;
+                }
 
-        function dispatchSocReport(id) {
-            const socButton = document.getElementById(`soc-btn-${id}`);
-            const errorBox = document.getElementById(`soc-error-${id}`);
-            if (!socButton) return;
-            if (errorBox) errorBox.classList.add('hidden');
+                if (data.emails && data.emails.length > 0) {
+                    data.emails.forEach(email => {
+                        if (!window.allEmails.some(existing => existing.id === email.id)) {
+                            window.allEmails.push(email);
+                        }
+                    });
+                    applyFilters();
+                }
 
-            fetch(`/api/report-soc/${id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(res => {
-                if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-                return res.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    socButton.innerText = "Reported";
-                    socButton.className = "px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-700 text-slate-500 bg-slate-800 opacity-60 pointer-events-none";
-                } else {
-                    throw new Error(data.message || 'Unexpected response');
+                window.nextPageToken = data.next_token || '';
+                if (!window.nextPageToken) {
+                    container.classList.add('hidden');
                 }
             })
-            .catch(() => {
-                if (errorBox) errorBox.classList.remove('hidden');
+            .catch(err => {
+                loadBtn.disabled = false;
+                loadBtn.innerHTML = originalInner;
+                errorBox.classList.remove('hidden');
+                errorText.innerText = "Couldn't load more messages (" + err.message + ").";
             });
-        }
+    }
 
-        function renderQuizContent(quiz) {
-            document.getElementById('quiz-loading').classList.add('hidden');
-            document.getElementById('quiz-content').classList.remove('hidden');
-            document.getElementById('quiz-feedback').classList.add('hidden');
+    function dispatchSocReport(id) {
+        const socButton = document.getElementById(`soc-btn-${id}`);
+        const errorBox = document.getElementById(`soc-error-${id}`);
+        if (!socButton) return;
+        if (errorBox) errorBox.classList.add('hidden');
 
-            activeQuizData = quiz;
-            document.getElementById('quiz-question-text').innerText = activeQuizData.question;
+        const email = window.allEmails.find(e => e.id === id) || {};
 
-            const optionsBox = document.getElementById('quiz-options-box');
-            optionsBox.innerHTML = '';
-
-            activeQuizData.options.forEach((opt, idx) => {
-                const optBtn = document.createElement('button');
-                optBtn.className = "w-full text-left bg-slate-800/60 hover:bg-slate-800 border border-slate-700 p-2.5 rounded-lg text-xs transition duration-150 cursor-pointer font-medium text-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500";
-                optBtn.innerText = opt;
-                optBtn.disabled = false;
-                optBtn.onclick = () => evaluateQuizSelection(idx, optBtn);
-                optionsBox.appendChild(optBtn);
-            });
-        }
-
-        function triggerQuizModule(email) {
-            activeQuizEmail = email;
-            const quizPane = document.getElementById('quiz-pane');
-            const quizLoading = document.getElementById('quiz-loading');
-            const quizContent = document.getElementById('quiz-content');
-            const quizFeedback = document.getElementById('quiz-feedback');
-            const quizError = document.getElementById('quiz-error');
-
-            quizPane.classList.remove('hidden');
-            quizFeedback.classList.add('hidden');
-            quizError.classList.add('hidden');
-
-            document.getElementById('quiz-retry-btn').onclick = () => triggerQuizModule(email);
-
-            if (quizResultsCache.has(email.id)) {
-                quizLoading.classList.add('hidden');
-                renderQuizContent(quizResultsCache.get(email.id));
-                return;
-            }
-
-            quizLoading.classList.remove('hidden');
-            quizContent.classList.add('hidden');
-
-            fetch(`/api/quiz/${email.id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sender: email.sender, subject: email.subject, body: email.body })
-            })
-            .then(res => {
-                if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-                return res.json();
-            })
-            .then(data => {
-                quizResultsCache.set(email.id, data.quiz);
-                renderQuizContent(data.quiz);
-            })
-            .catch(() => {
-                quizLoading.classList.add('hidden');
-                quizError.classList.remove('hidden');
-            });
-        }
-
-        function evaluateQuizSelection(selectedIndex, clickedButton) {
-            if (!activeQuizData) return;
-
-            const feedback = document.getElementById('quiz-feedback');
-            const optionsBox = document.getElementById('quiz-options-box');
-
-            Array.from(optionsBox.children).forEach(btn => btn.disabled = true);
-
-            feedback.classList.remove('hidden');
-            if (selectedIndex === activeQuizData.correct_index) {
-                clickedButton.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold";
-                feedback.className = "text-xs p-3.5 rounded-lg border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 leading-relaxed";
-                feedback.innerHTML = `<strong><i class="fa-solid fa-circle-check mr-1.5"></i>Correct:</strong> ${activeQuizData.explanation}`;
+        fetch(`/api/report-soc/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sender: email.sender || '', subject: email.subject || '', risk_score: email.risk_score || 0 })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                socButton.innerText = "Reported";
+                socButton.className = "px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-700 text-slate-500 bg-slate-800 opacity-60 pointer-events-none";
             } else {
-                clickedButton.className = "w-full text-left bg-rose-500/10 border border-rose-500/40 text-rose-400 p-2.5 rounded-lg text-xs font-semibold";
-                feedback.className = "text-xs p-3.5 rounded-lg border bg-rose-500/10 border-rose-500/30 text-rose-400 leading-relaxed";
-
-                const correctBtn = optionsBox.children[activeQuizData.correct_index];
-                if (correctBtn) correctBtn.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold";
-
-                feedback.innerHTML = `<strong><i class="fa-solid fa-circle-xmark mr-1.5"></i>Not quite:</strong> ${activeQuizData.explanation}`;
+                throw new Error(data.message || 'Unexpected response');
             }
+        })
+        .catch(() => {
+            if (errorBox) errorBox.classList.remove('hidden');
+        });
+    }
+
+    function renderQuizContent(quiz) {
+        document.getElementById('quiz-loading').classList.add('hidden');
+        document.getElementById('quiz-content').classList.remove('hidden');
+        document.getElementById('quiz-feedback').classList.add('hidden');
+
+        activeQuizData = quiz;
+        document.getElementById('quiz-question-text').innerText = activeQuizData.question;
+
+        const optionsBox = document.getElementById('quiz-options-box');
+        optionsBox.innerHTML = '';
+
+        activeQuizData.options.forEach((opt, idx) => {
+            const optBtn = document.createElement('button');
+            optBtn.className = "w-full text-left bg-slate-800/60 hover:bg-slate-800 border border-slate-700 p-2.5 rounded-lg text-xs transition duration-150 cursor-pointer font-medium text-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500";
+            optBtn.innerText = opt;
+            optBtn.disabled = false;
+            optBtn.onclick = () => evaluateQuizSelection(idx, optBtn);
+            optionsBox.appendChild(optBtn);
+        });
+    }
+
+    function triggerQuizModule(email) {
+        activeQuizEmail = email;
+        const quizPane = document.getElementById('quiz-pane');
+        const quizLoading = document.getElementById('quiz-loading');
+        const quizContent = document.getElementById('quiz-content');
+        const quizFeedback = document.getElementById('quiz-feedback');
+        const quizError = document.getElementById('quiz-error');
+
+        quizPane.classList.remove('hidden');
+        quizFeedback.classList.add('hidden');
+        quizError.classList.add('hidden');
+
+        document.getElementById('quiz-retry-btn').onclick = () => triggerQuizModule(email);
+
+        if (quizResultsCache.has(email.id)) {
+            quizLoading.classList.add('hidden');
+            renderQuizContent(quizResultsCache.get(email.id));
+            return;
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (window.allEmails && window.allEmails.length > 0) {
-                applyFilters();
-            }
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetEmailId = urlParams.get('emailId');
-            if (targetEmailId) {
-                selectEmail(targetEmailId, false);
-            }
+        quizLoading.classList.remove('hidden');
+        quizContent.classList.add('hidden');
+
+        fetch(`/api/quiz/${email.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sender: email.sender, subject: email.subject, body: email.body })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            quizResultsCache.set(email.id, data.quiz);
+            renderQuizContent(data.quiz);
+        })
+        .catch(() => {
+            quizLoading.classList.add('hidden');
+            quizError.classList.remove('hidden');
         });
-    </script>
-    {% endif %}
-</body>
-</html>
+    }
+
+    function evaluateQuizSelection(selectedIndex, clickedButton) {
+        if (!activeQuizData) return;
+
+        const feedback = document.getElementById('quiz-feedback');
+        const optionsBox = document.getElementById('quiz-options-box');
+
+        Array.from(optionsBox.children).forEach(btn => btn.disabled = true);
+
+        feedback.classList.remove('hidden');
+        if (selectedIndex === activeQuizData.correct_index) {
+            clickedButton.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold";
+            feedback.className = "text-xs p-3.5 rounded-lg border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 leading-relaxed";
+            feedback.innerHTML = `<strong><i class="fa-solid fa-circle-check mr-1.5"></i>Correct:</strong> ${activeQuizData.explanation}`;
+        } else {
+            clickedButton.className = "w-full text-left bg-rose-500/10 border border-rose-500/40 text-rose-400 p-2.5 rounded-lg text-xs font-semibold";
+            feedback.className = "text-xs p-3.5 rounded-lg border bg-rose-500/10 border-rose-500/30 text-rose-400 leading-relaxed";
+
+            const correctBtn = optionsBox.children[activeQuizData.correct_index];
+            if (correctBtn) correctBtn.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold";
+
+            feedback.innerHTML = `<strong><i class="fa-solid fa-circle-xmark mr-1.5"></i>Not quite:</strong> ${activeQuizData.explanation}`;
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (window.allEmails && window.allEmails.length > 0) {
+            applyFilters();
+        }
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetEmailId = urlParams.get('emailId');
+        if (targetEmailId) {
+            selectEmail(targetEmailId, false);
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}
