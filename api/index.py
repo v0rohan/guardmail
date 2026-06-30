@@ -70,6 +70,27 @@ DANGEROUS_URL_KEYWORDS = [
     "update", "paypal", "bank", "signin", "verification", "credentials"
 ]
 
+AVATAR_COLORS = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-amber-500",
+                  "bg-rose-500", "bg-cyan-500", "bg-indigo-500", "bg-teal-500"]
+
+
+def get_initials(sender: str) -> str:
+    """Returns a single uppercase initial for a sender's display name (or email if none)."""
+    name = sender.split('<')[0].strip()
+    if not name:
+        match = re.search(r'<([^>]+)>', sender)
+        name = match.group(1) if match else sender
+    return (name[:1] or '?').upper()
+
+
+def get_avatar_color(sender: str) -> str:
+    """Deterministically maps a sender string to a Tailwind background color class."""
+    return AVATAR_COLORS[sum(ord(c) for c in sender) % len(AVATAR_COLORS)]
+
+
+app.jinja_env.filters['initials'] = get_initials
+app.jinja_env.filters['avatar_color'] = get_avatar_color
+
 
 def detect_spoofing(sender_str: str) -> bool:
     """Detects if a popular brand name is being impersonated in the sender display string."""

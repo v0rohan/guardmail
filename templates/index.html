@@ -9,37 +9,73 @@
     <meta property="og:description" content="Scan your inbox for phishing, spam, and spoofed senders, and learn to recognize the warning signs.">
     <meta property="og:type" content="website">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%9B%A1%EF%B8%8F</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen selection:bg-blue-100">
+<body class="bg-slate-950 text-slate-300 min-h-screen selection:bg-blue-500/30">
 
     {% if not logged_in %}
-    <div class="min-h-screen flex flex-col justify-center items-center px-4 bg-slate-50 text-slate-800">
-        <div class="max-w-md w-full bg-white border border-slate-200 p-8 rounded-2xl shadow-sm text-center space-y-6">
-            <div class="inline-flex bg-blue-600 text-white p-3.5 rounded-xl shadow-sm">
-                <i class="fa-solid fa-shield-halved text-2xl"></i>
+    <div class="min-h-screen flex flex-col bg-slate-950 text-slate-300">
+        <header class="border-b border-slate-800/80 p-4">
+            <div class="max-w-6xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="bg-blue-600 text-white p-2 rounded-lg">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <span class="font-bold text-lg tracking-tight text-white">GuardMail</span>
+                </div>
+                <span class="text-[11px] font-mono text-slate-500 border border-slate-800 rounded px-2 py-1">BETA</span>
             </div>
-            <div>
-                <h1 class="text-2xl font-bold text-slate-900">GuardMail</h1>
-                <p class="text-sm text-slate-500 mt-2 leading-relaxed">Scan your inbox for phishing, spam, and suspicious senders</p>
-            </div>
-            <div class="border-t border-slate-200 my-2"></div>
-            <p class="text-sm text-slate-500 leading-relaxed">Connect your Google account to scan your inbox, flag suspicious messages, and review safety details for each one.</p>
+        </header>
 
-            <a href="/login" class="w-full flex items-center justify-center space-x-3 bg-slate-900 text-white font-semibold hover:bg-slate-800 py-3 px-4 rounded-xl transition cursor-pointer">
-                <i class="fa-brands fa-google text-base"></i>
+        <main class="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
+            <div class="inline-flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-full px-4 py-1.5 text-xs text-slate-400 mb-8">
+                <i class="fa-solid fa-shield-halved text-blue-400"></i>
+                <span>Free &middot; Read-only Gmail access &middot; Beta</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white max-w-2xl leading-tight">
+                Stop phishing emails<br><span class="text-blue-400">before they stop you.</span>
+            </h1>
+            <p class="mt-5 max-w-md text-slate-400 leading-relaxed">
+                GuardMail scans your inbox for phishing, spam, and spoofed senders, then teaches you to spot the warning signs with AI-generated reports and quizzes.
+            </p>
+
+            <a href="/login" class="mt-8 inline-flex items-center space-x-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition shadow-lg shadow-blue-900/40 cursor-pointer">
+                <i class="fa-brands fa-google"></i>
                 <span>Sign in with Google</span>
             </a>
+            <p class="mt-3 text-xs text-slate-500">Requested access: read-only Gmail</p>
 
-            <p class="text-xs text-slate-400">Requested access: read-only Gmail</p>
-        </div>
+            <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full text-left">
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                    <div class="text-rose-400 mb-2"><i class="fa-solid fa-mask"></i></div>
+                    <h3 class="text-sm font-semibold text-white mb-1">Spoofing detection</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Flags senders impersonating brands you trust.</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                    <div class="text-amber-400 mb-2"><i class="fa-solid fa-link"></i></div>
+                    <h3 class="text-sm font-semibold text-white mb-1">Link sandboxing</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">Flags risky URLs before you click them.</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                    <div class="text-purple-400 mb-2"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <h3 class="text-sm font-semibold text-white mb-1">Learn as you go</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">AI quizzes teach you to spot scams yourself.</p>
+                </div>
+            </div>
+        </main>
     </div>
     {% else %}
 
@@ -48,23 +84,23 @@
         window.nextPageToken = {{ next_token|tojson|safe if next_token else '""' }};
     </script>
 
-    <header class="border-b border-slate-200 bg-white p-4 sticky top-0 z-50">
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md p-4 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-sm">
+                <div class="bg-blue-600 text-white p-2.5 rounded-xl">
                     <i class="fa-solid fa-shield-halved text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold text-slate-900">GuardMail</h1>
+                    <h1 class="text-lg font-bold text-white tracking-tight">GuardMail</h1>
                     <p class="text-xs text-slate-500">Connected to Gmail</p>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
-                <div class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs text-emerald-700 flex items-center space-x-2 font-medium">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>Live</span>
+                <div class="bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs text-emerald-400 flex items-center space-x-2 font-medium font-mono">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>LIVE</span>
                 </div>
-                <a href="/logout" class="text-xs font-semibold text-slate-500 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg transition">
+                <a href="/logout" class="text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg transition">
                     <i class="fa-solid fa-right-from-bracket mr-1.5"></i>Sign Out
                 </a>
             </div>
@@ -74,65 +110,65 @@
     <main class="max-w-7xl mx-auto p-4 lg:p-6 space-y-6">
 
         <section class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div class="bg-white border border-slate-200 p-5 rounded-xl flex items-center justify-between transition hover:border-slate-300">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
                 <div>
-                    <p class="text-xs text-slate-500 font-medium">Messages scanned</p>
-                    <p class="text-2xl font-bold text-slate-900 mt-1">{{ analytics.total }}</p>
+                    <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Messages scanned</p>
+                    <p class="text-2xl font-bold font-mono text-white mt-1">{{ analytics.total }}</p>
                 </div>
-                <div class="p-2.5 bg-slate-100 rounded-lg text-slate-500"><i class="fa-solid fa-inbox text-lg"></i></div>
+                <div class="p-2.5 bg-slate-800 rounded-xl text-slate-400"><i class="fa-solid fa-inbox text-lg"></i></div>
             </div>
-            <div class="bg-white border border-slate-200 p-5 rounded-xl flex items-center justify-between transition hover:border-rose-200">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-rose-500/40 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
                 <div>
-                    <p class="text-xs text-rose-600 font-medium">Spoofed senders</p>
-                    <p class="text-2xl font-bold text-rose-600 mt-1">{{ analytics.spoofed }}</p>
+                    <p class="text-[11px] uppercase tracking-wide text-rose-400 font-medium">Spoofed senders</p>
+                    <p class="text-2xl font-bold font-mono text-rose-400 mt-1">{{ analytics.spoofed }}</p>
                 </div>
-                <div class="p-2.5 bg-rose-50 rounded-lg text-rose-500"><i class="fa-solid fa-mask text-lg"></i></div>
+                <div class="p-2.5 bg-rose-500/10 rounded-xl text-rose-400"><i class="fa-solid fa-mask text-lg"></i></div>
             </div>
-            <div class="bg-white border border-slate-200 p-5 rounded-xl flex items-center justify-between transition hover:border-amber-200">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-amber-500/40 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
                 <div>
-                    <p class="text-xs text-amber-600 font-medium">Reported cases</p>
-                    <p class="text-2xl font-bold text-amber-600 mt-1">{{ analytics.soc_cases }}</p>
+                    <p class="text-[11px] uppercase tracking-wide text-amber-400 font-medium">Reported cases</p>
+                    <p class="text-2xl font-bold font-mono text-amber-400 mt-1">{{ analytics.soc_cases }}</p>
                 </div>
-                <div class="p-2.5 bg-amber-50 rounded-lg text-amber-500"><i class="fa-solid fa-flag text-lg"></i></div>
+                <div class="p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><i class="fa-solid fa-flag text-lg"></i></div>
             </div>
-            <div class="bg-white border border-slate-200 p-5 rounded-xl flex items-center justify-between transition hover:border-slate-300">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
                 <div>
-                    <p class="text-xs text-slate-500 font-medium">Scam rate</p>
-                    <p class="text-2xl font-bold text-slate-900 mt-1">{{ analytics.percentage }}%</p>
+                    <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Scam rate</p>
+                    <p class="text-2xl font-bold font-mono text-white mt-1">{{ analytics.percentage }}%</p>
                 </div>
-                <div class="p-2.5 bg-slate-100 rounded-lg text-slate-500"><i class="fa-solid fa-chart-line text-lg"></i></div>
+                <div class="p-2.5 bg-slate-800 rounded-xl text-slate-400"><i class="fa-solid fa-chart-line text-lg"></i></div>
             </div>
         </section>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            <section class="lg:col-span-5 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-                <div class="p-4 bg-slate-50 border-b border-slate-200 space-y-3">
+            <section class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+                <div class="p-4 bg-slate-900 border-b border-slate-800 space-y-3">
                     <div class="flex justify-between items-center">
-                        <h2 class="font-semibold text-slate-800 text-sm flex items-center space-x-2">
-                            <i class="fa-solid fa-inbox text-slate-400"></i>
+                        <h2 class="font-semibold text-slate-200 text-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-inbox text-slate-500"></i>
                             <span>Inbox</span>
                         </h2>
-                        <button onclick="window.location.reload()" class="text-xs bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 font-medium px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+                        <button onclick="window.location.reload()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium px-2.5 py-1.5 rounded-lg transition cursor-pointer">
                             <i class="fa-solid fa-arrow-rotate-right mr-1"></i> Refresh
                         </button>
                     </div>
                     <div class="flex items-center space-x-2">
                         <div class="relative flex-1">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
                             <input type="text" id="inbox-search" oninput="applyFilters()" placeholder="Search sender, subject, body..."
-                                   class="w-full text-xs bg-white border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                   class="w-full text-xs bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
-                        <select id="inbox-sort" onchange="applyFilters()" class="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer">
+                        <select id="inbox-sort" onchange="applyFilters()" class="text-xs bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
                             <option value="default">Newest</option>
                             <option value="risk">Highest risk</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="divide-y divide-slate-100 overflow-y-auto flex-1 min-h-[450px] max-h-[650px]">
+                <div class="divide-y divide-slate-800 overflow-y-auto flex-1 min-h-[450px] max-h-[650px]">
                     {% if fetch_error %}
-                    <div class="p-4 m-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-600 flex items-start space-x-2">
+                    <div class="p-4 m-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs text-rose-400 flex items-start space-x-2">
                         <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                         <div>
                             <p class="font-semibold">Couldn't load your inbox</p>
@@ -144,7 +180,7 @@
 
                     <div id="email-cards-container">
                         {% if not fetch_error and emails|length == 0 %}
-                        <div class="p-8 text-center text-slate-400 space-y-3 mt-16">
+                        <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
                             <i class="fa-regular fa-folder-open text-3xl opacity-50"></i>
                             <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages found. Once your inbox has mail, it'll show up here.</p>
                         </div>
@@ -153,40 +189,44 @@
                         {% for email in emails %}
                         <div onclick="selectEmail('{{ email.id }}')"
                              id="email-card-{{ email.id }}"
-                             class="p-4 hover:bg-slate-50 transition duration-150 cursor-pointer border-l-4 relative
+                             class="p-4 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 relative flex gap-3
                                     {% if email.initial_category == 'Scam Alert' %}border-rose-500
                                     {% elif email.initial_category == 'Spam' %}border-amber-500
                                     {% elif email.initial_category == 'High Priority' %}border-purple-500
                                     {% else %}border-transparent{% endif %}">
 
-                            <div class="flex justify-between items-start mb-1">
-                                <span class="text-sm font-medium text-slate-700 truncate max-w-[180px] block">{{ email.sender }}</span>
-                                <span class="text-[10px] text-slate-400 whitespace-nowrap ml-2">{{ email.date }}</span>
-                            </div>
+                            <div class="w-9 h-9 rounded-full {{ email.sender|avatar_color }} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">{{ email.sender|initials }}</div>
 
-                            <h3 class="text-sm font-semibold text-slate-900 truncate mb-1">{{ email.subject if email.subject else '(No Subject)' }}</h3>
-                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ email.body }}</p>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="text-sm font-medium text-slate-200 truncate max-w-[180px] block">{{ email.sender }}</span>
+                                    <span class="text-[10px] text-slate-500 whitespace-nowrap ml-2">{{ email.date }}</span>
+                                </div>
 
-                            <div class="mt-3 flex items-center justify-between">
-                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold
-                                    {% if email.initial_category == 'Scam Alert' %}bg-rose-50 text-rose-600 border border-rose-200
-                                    {% elif email.initial_category == 'Spam' %}bg-amber-50 text-amber-600 border border-amber-200
-                                    {% elif email.initial_category == 'High Priority' %}bg-purple-50 text-purple-600 border border-purple-200
-                                    {% else %}bg-slate-100 text-slate-500 border border-slate-200{% endif %}">
-                                    {{ email.initial_category }}
-                                </span>
-                                <span class="text-xs font-medium text-slate-400">Risk: {{ email.risk_score }}%</span>
+                                <h3 class="text-sm font-semibold text-white truncate mb-1">{{ email.subject if email.subject else '(No Subject)' }}</h3>
+                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ email.body }}</p>
+
+                                <div class="mt-3 flex items-center justify-between">
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold
+                                        {% if email.initial_category == 'Scam Alert' %}bg-rose-500/10 text-rose-400 border border-rose-500/30
+                                        {% elif email.initial_category == 'Spam' %}bg-amber-500/10 text-amber-400 border border-amber-500/30
+                                        {% elif email.initial_category == 'High Priority' %}bg-purple-500/10 text-purple-400 border border-purple-500/30
+                                        {% else %}bg-slate-800 text-slate-400 border border-slate-700{% endif %}">
+                                        {{ email.initial_category }}
+                                    </span>
+                                    <span class="text-xs font-medium font-mono text-slate-500">Risk: {{ email.risk_score }}%</span>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
 
-                    <div id="load-more-container" class="p-3 bg-slate-50 text-center {% if not next_token %}hidden{% endif %}">
-                        <button onclick="loadNextBatch()" id="load-more-btn" class="w-full py-2 text-sm font-medium text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition cursor-pointer flex items-center justify-center space-x-2">
+                    <div id="load-more-container" class="p-3 bg-slate-900 text-center {% if not next_token %}hidden{% endif %}">
+                        <button onclick="loadNextBatch()" id="load-more-btn" class="w-full py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition cursor-pointer flex items-center justify-center space-x-2">
                             <i class="fa-solid fa-chevron-down text-xs"></i>
                             <span>Load more</span>
                         </button>
-                        <div id="load-more-error" class="hidden mt-2 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2 text-left">
+                        <div id="load-more-error" class="hidden mt-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2 text-left">
                             <i class="fa-solid fa-circle-exclamation mr-1"></i>
                             <span id="load-more-error-text"></span>
                             <button onclick="loadNextBatch()" class="ml-1 underline font-medium">Try again</button>
@@ -197,27 +237,27 @@
 
             <section class="lg:col-span-7 flex flex-col space-y-6">
 
-                <div id="viewer-pane" class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm min-h-[160px] flex flex-col justify-center items-center text-center text-slate-400 transition">
-                    <i class="fa-regular fa-envelope-open text-3xl mb-3 text-slate-300"></i>
+                <div id="viewer-pane" class="bg-slate-900 border border-slate-800 rounded-xl p-6 min-h-[160px] flex flex-col justify-center items-center text-center text-slate-500 transition">
+                    <i class="fa-regular fa-envelope-open text-3xl mb-3 text-slate-700"></i>
                     <p class="text-sm max-w-sm leading-relaxed">Select a message from the inbox to view its contents and safety details.</p>
                 </div>
 
-                <div id="sandbox-pane" class="hidden bg-white border border-slate-200 rounded-xl p-5 shadow-sm transition duration-200">
-                    <div class="text-xs font-semibold text-slate-700 mb-3 flex items-center space-x-2">
-                        <i class="fa-solid fa-link text-amber-500"></i>
+                <div id="sandbox-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-5 transition duration-200">
+                    <div class="text-xs font-semibold text-slate-300 mb-3 flex items-center space-x-2">
+                        <i class="fa-solid fa-link text-amber-400"></i>
                         <span>Links in this message</span>
                     </div>
                     <div id="sandbox-links-list" class="space-y-2"></div>
                 </div>
 
-                <div id="ai-pane" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm transition duration-200">
-                    <div class="flex items-center space-x-2 text-slate-700 font-semibold text-sm mb-4">
-                        <i class="fa-solid fa-magnifying-glass-chart text-blue-500"></i>
+                <div id="ai-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition duration-200">
+                    <div class="flex items-center space-x-2 text-slate-200 font-semibold text-sm mb-4">
+                        <i class="fa-solid fa-magnifying-glass-chart text-blue-400"></i>
                         <span>AI Analysis</span>
                     </div>
 
-                    <div id="ai-loading" class="py-8 text-center text-slate-400 space-y-2">
-                        <i class="fa-solid fa-circle-notch text-xl text-blue-500 animate-spin"></i>
+                    <div id="ai-loading" class="py-8 text-center text-slate-500 space-y-2">
+                        <i class="fa-solid fa-circle-notch text-xl text-blue-400 animate-spin"></i>
                         <p class="text-xs">Analyzing this message...</p>
                     </div>
 
@@ -225,48 +265,48 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <label class="text-xs font-medium text-slate-500 block mb-1">Threat type</label>
-                                <div id="ai-threat-type" class="inline-block bg-rose-50 text-rose-600 border border-rose-200 px-3 py-1 rounded-lg font-semibold text-xs">
+                                <div id="ai-threat-type" class="inline-block bg-rose-500/10 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-lg font-semibold text-xs">
                                     --
                                 </div>
                             </div>
                         </div>
 
-                        <div class="border-t border-slate-100 pt-3">
+                        <div class="border-t border-slate-800 pt-3">
                             <label class="text-xs font-medium text-slate-500 block mb-2">Warning signs</label>
                             <div id="ai-indicators-box" class="grid grid-cols-1 gap-2"></div>
                         </div>
 
-                        <div class="border-t border-slate-100 pt-3">
+                        <div class="border-t border-slate-800 pt-3">
                             <label class="text-xs font-medium text-slate-500 block mb-1">Summary</label>
-                            <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 text-sm text-slate-600 leading-relaxed" id="ai-report">
+                            <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700 text-sm text-slate-300 leading-relaxed" id="ai-report">
                                 --
                             </div>
                         </div>
                     </div>
 
                     <div id="ai-error" class="hidden py-6 text-center text-slate-500 space-y-2">
-                        <i class="fa-solid fa-triangle-exclamation text-xl text-amber-500"></i>
+                        <i class="fa-solid fa-triangle-exclamation text-xl text-amber-400"></i>
                         <p class="text-xs" id="ai-error-text">Couldn't complete analysis. Please try again.</p>
-                        <button id="ai-retry-btn" class="text-xs font-medium text-blue-600 underline">Try again</button>
+                        <button id="ai-retry-btn" class="text-xs font-medium text-blue-400 underline">Try again</button>
                     </div>
                 </div>
 
-                <div id="quiz-pane" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm transition duration-200">
-                    <div class="flex items-center space-x-2 text-slate-700 font-semibold text-sm mb-3">
-                        <i class="fa-solid fa-graduation-cap text-purple-500"></i>
+                <div id="quiz-pane" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-6 transition duration-200">
+                    <div class="flex items-center space-x-2 text-slate-200 font-semibold text-sm mb-3">
+                        <i class="fa-solid fa-graduation-cap text-purple-400"></i>
                         <span>Quick Quiz</span>
                     </div>
-                    <div id="quiz-loading" class="py-4 text-center text-slate-400 text-xs">
+                    <div id="quiz-loading" class="py-4 text-center text-slate-500 text-xs">
                         <i class="fa-solid fa-spinner fa-spin mr-2"></i>Building a question...
                     </div>
                     <div id="quiz-content" class="hidden space-y-4">
-                        <p id="quiz-question-text" class="text-sm font-medium text-slate-800 leading-relaxed"></p>
+                        <p id="quiz-question-text" class="text-sm font-medium text-slate-200 leading-relaxed"></p>
                         <div id="quiz-options-box" class="grid grid-cols-1 gap-2"></div>
                         <div id="quiz-feedback" class="hidden text-xs p-3.5 rounded-lg border"></div>
                     </div>
                     <div id="quiz-error" class="hidden py-4 text-center text-slate-500 space-y-2">
                         <p class="text-xs">Couldn't load the quiz right now.</p>
-                        <button id="quiz-retry-btn" class="text-xs font-medium text-blue-600 underline">Try again</button>
+                        <button id="quiz-retry-btn" class="text-xs font-medium text-blue-400 underline">Try again</button>
                     </div>
                 </div>
 
@@ -284,6 +324,21 @@
             return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
+        const AVATAR_COLORS = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500'];
+
+        function getInitials(sender) {
+            const name = (sender || '').split('<')[0].trim();
+            if (name) return name[0].toUpperCase();
+            const match = (sender || '').match(/<([^>]+)>/);
+            return ((match ? match[1] : sender) || '?')[0].toUpperCase();
+        }
+
+        function getAvatarColor(sender) {
+            let sum = 0;
+            for (const c of (sender || '')) sum += c.charCodeAt(0);
+            return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+        }
+
         function formatRelativeTime(dateStr) {
             if (!dateStr) return '';
             const date = new Date(dateStr);
@@ -299,10 +354,10 @@
         }
 
         function categoryClasses(category) {
-            if (category === 'Scam Alert') return { border: 'border-rose-500', badge: 'bg-rose-50 text-rose-600 border border-rose-200' };
-            if (category === 'Spam') return { border: 'border-amber-500', badge: 'bg-amber-50 text-amber-600 border border-amber-200' };
-            if (category === 'High Priority') return { border: 'border-purple-500', badge: 'bg-purple-50 text-purple-600 border border-purple-200' };
-            return { border: 'border-transparent', badge: 'bg-slate-100 text-slate-500 border border-slate-200' };
+            if (category === 'Scam Alert') return { border: 'border-rose-500', badge: 'bg-rose-500/10 text-rose-400 border border-rose-500/30' };
+            if (category === 'Spam') return { border: 'border-amber-500', badge: 'bg-amber-500/10 text-amber-400 border border-amber-500/30' };
+            if (category === 'High Priority') return { border: 'border-purple-500', badge: 'bg-purple-500/10 text-purple-400 border border-purple-500/30' };
+            return { border: 'border-transparent', badge: 'bg-slate-800 text-slate-400 border border-slate-700' };
         }
 
         function emailCardHtml(email) {
@@ -310,19 +365,23 @@
             const cleanSender = escapeHtml(email.sender);
             const cleanSubject = escapeHtml(email.subject || '(No Subject)');
             const cleanSnippet = escapeHtml((email.body || '').substring(0, 160));
+            const cleanInitials = escapeHtml(getInitials(email.sender));
             return `
                 <div onclick="selectEmail('${email.id}')"
                      id="email-card-${email.id}"
-                     class="p-4 hover:bg-slate-50 transition duration-150 cursor-pointer border-l-4 relative ${border}">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-sm font-medium text-slate-700 truncate max-w-[180px] block">${cleanSender}</span>
-                        <span class="text-[10px] text-slate-400 whitespace-nowrap ml-2">${formatRelativeTime(email.date)}</span>
-                    </div>
-                    <h3 class="text-sm font-semibold text-slate-900 truncate mb-1">${cleanSubject}</h3>
-                    <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${cleanSnippet}</p>
-                    <div class="mt-3 flex items-center justify-between">
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge}">${email.initial_category}</span>
-                        <span class="text-xs font-medium text-slate-400">Risk: ${email.risk_score}%</span>
+                     class="p-4 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 relative flex gap-3 ${border}">
+                    <div class="w-9 h-9 rounded-full ${getAvatarColor(email.sender)} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">${cleanInitials}</div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-sm font-medium text-slate-200 truncate max-w-[180px] block">${cleanSender}</span>
+                            <span class="text-[10px] text-slate-500 whitespace-nowrap ml-2">${formatRelativeTime(email.date)}</span>
+                        </div>
+                        <h3 class="text-sm font-semibold text-white truncate mb-1">${cleanSubject}</h3>
+                        <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${cleanSnippet}</p>
+                        <div class="mt-3 flex items-center justify-between">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge}">${email.initial_category}</span>
+                            <span class="text-xs font-medium font-mono text-slate-500">Risk: ${email.risk_score}%</span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -332,7 +391,7 @@
             const container = document.getElementById('email-cards-container');
             if (emailsToRender.length === 0) {
                 container.innerHTML = `
-                    <div class="p-8 text-center text-slate-400 space-y-3 mt-16">
+                    <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
                         <i class="fa-solid fa-magnifying-glass text-3xl opacity-50"></i>
                         <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages match your search.</p>
                     </div>
@@ -345,7 +404,7 @@
             const selectedId = urlParams.get('emailId');
             if (selectedId) {
                 const card = document.getElementById(`email-card-${selectedId}`);
-                if (card) card.classList.add('bg-slate-100', 'ring-1', 'ring-slate-300');
+                if (card) card.classList.add('bg-slate-800', 'ring-1', 'ring-slate-600');
             }
         }
 
@@ -373,11 +432,11 @@
 
             window.allEmails.forEach(e => {
                 const card = document.getElementById(`email-card-${e.id}`);
-                if (card) card.classList.remove('bg-slate-100', 'ring-1', 'ring-slate-300');
+                if (card) card.classList.remove('bg-slate-800', 'ring-1', 'ring-slate-600');
             });
 
             const activeCard = document.getElementById(`email-card-${id}`);
-            if (activeCard) activeCard.classList.add('bg-slate-100', 'ring-1', 'ring-slate-300');
+            if (activeCard) activeCard.classList.add('bg-slate-800', 'ring-1', 'ring-slate-600');
 
             if (triggerUrlUpdate) {
                 const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?emailId=' + id;
@@ -385,38 +444,41 @@
             }
 
             const viewerPane = document.getElementById('viewer-pane');
-            viewerPane.className = "bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between text-left";
+            viewerPane.className = "bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between text-left";
             viewerPane.innerHTML = `
                 <div>
-                    <div class="border-b border-slate-100 pb-3 mb-3 flex justify-between items-start">
-                        <div class="max-w-[75%]">
-                            <div class="text-xs text-slate-500 truncate"><span class="font-medium text-slate-400 mr-1">From:</span> <span id="view-sender-text"></span></div>
-                            <div class="text-sm text-slate-800 mt-1.5"><span class="font-medium text-slate-400 mr-1">Subject:</span> <span id="view-subject-text"></span></div>
-                            <div class="text-xs text-slate-400 mt-1"><span class="font-medium text-slate-400 mr-1">Received:</span> <span id="view-date-text"></span></div>
+                    <div class="border-b border-slate-800 pb-3 mb-3 flex justify-between items-start">
+                        <div class="flex items-start gap-3 max-w-[75%] min-w-0">
+                            <div id="view-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"></div>
+                            <div class="min-w-0">
+                                <div class="text-xs text-slate-500 truncate"><span class="font-medium text-slate-600 mr-1">From:</span> <span id="view-sender-text"></span></div>
+                                <div class="text-sm text-slate-200 mt-1.5"><span class="font-medium text-slate-600 mr-1">Subject:</span> <span id="view-subject-text"></span></div>
+                                <div class="text-xs text-slate-500 mt-1"><span class="font-medium text-slate-600 mr-1">Received:</span> <span id="view-date-text"></span></div>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xs font-medium text-slate-400 block">Risk Score</span>
-                            <span class="text-xl font-bold ${email.risk_score >= 70 ? 'text-rose-500' : email.risk_score >= 40 ? 'text-amber-500' : 'text-emerald-500'}">${email.risk_score || 10}%</span>
+                        <div class="text-right flex-shrink-0">
+                            <span class="text-xs font-medium text-slate-500 block">Risk Score</span>
+                            <span class="text-xl font-bold font-mono ${email.risk_score >= 70 ? 'text-rose-400' : email.risk_score >= 40 ? 'text-amber-400' : 'text-emerald-400'}">${email.risk_score || 10}%</span>
                         </div>
                     </div>
 
                     ${email.spoofing_detected ? `
-                    <div class="bg-rose-50 border border-rose-200 px-3 py-2 rounded-lg text-xs text-rose-600 flex items-center space-x-2 mb-4">
+                    <div class="bg-rose-500/10 border border-rose-500/30 px-3 py-2 rounded-lg text-xs text-rose-400 flex items-center space-x-2 mb-4">
                         <i class="fa-solid fa-mask"></i>
                         <span><strong>Possible spoofing:</strong> the sender name doesn't match the actual email domain.</span>
                     </div>
                     ` : ''}
 
-                    <div id="email-body-content-target" class="max-h-[380px] overflow-y-auto pr-2 text-sm text-slate-600 whitespace-pre-line leading-relaxed mb-6 bg-slate-50 p-3 rounded-lg border border-slate-200"></div>
+                    <div id="email-body-content-target" class="max-h-[380px] overflow-y-auto pr-2 text-sm text-slate-400 whitespace-pre-line leading-relaxed mb-6 bg-slate-800/50 p-3 rounded-lg border border-slate-700"></div>
 
-                    <div class="border-t border-slate-100 pt-4 mt-2 flex justify-between items-center">
+                    <div class="border-t border-slate-800 pt-4 mt-2 flex justify-between items-center">
                         <span class="text-xs font-medium text-slate-500">Actions</span>
                         <button id="soc-btn-${email.id}" onclick="dispatchSocReport('${email.id}')"
-                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 transition cursor-pointer ${email.soc_reported ? 'opacity-60 pointer-events-none border-slate-200 text-slate-500 bg-slate-50' : ''}">
+                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition cursor-pointer ${email.soc_reported ? 'opacity-60 pointer-events-none border-slate-700 text-slate-500 bg-slate-800' : ''}">
                             <i class="fa-solid fa-flag mr-1.5"></i>${email.soc_reported ? 'Reported' : 'Report this email'}
                         </button>
                     </div>
-                    <div id="soc-error-${email.id}" class="hidden mt-2 text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2">
+                    <div id="soc-error-${email.id}" class="hidden mt-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2">
                         <i class="fa-solid fa-circle-exclamation mr-1"></i>Couldn't send the report. <button onclick="dispatchSocReport('${email.id}')" class="underline font-medium">Try again</button>
                     </div>
                 </div>
@@ -428,6 +490,10 @@
             document.getElementById('view-date-text').innerText = formatRelativeTime(email.date) || 'Unknown';
             document.getElementById('email-body-content-target').textContent = email.body || '';
 
+            const avatarEl = document.getElementById('view-avatar');
+            avatarEl.classList.add(getAvatarColor(email.sender));
+            avatarEl.innerText = getInitials(email.sender);
+
             const sandboxPane = document.getElementById('sandbox-pane');
             const sandboxLinksList = document.getElementById('sandbox-links-list');
 
@@ -436,11 +502,11 @@
                 sandboxLinksList.innerHTML = email.links.map(l => {
                     const cleanUrl = l.url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                     return `
-                    <div class="bg-slate-50 p-2.5 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-2
-                                ${l.safety_status.includes('Dangerous') ? 'border-rose-200 bg-rose-50' : 'border-slate-200'}">
-                        <span class="text-slate-500 truncate max-w-md break-all">${cleanUrl}</span>
+                    <div class="bg-slate-800/50 p-2.5 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-2
+                                ${l.safety_status.includes('Dangerous') ? 'border-rose-500/30 bg-rose-500/10' : 'border-slate-700'}">
+                        <span class="text-slate-400 truncate max-w-md break-all">${cleanUrl}</span>
                         <span class="px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap
-                                    ${l.safety_status.includes('Dangerous') ? 'bg-rose-100 text-rose-600 border border-rose-200' : 'bg-slate-100 text-slate-500'}">
+                                    ${l.safety_status.includes('Dangerous') ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' : 'bg-slate-800 text-slate-400'}">
                             ${l.safety_status}
                         </span>
                     </div>
@@ -477,14 +543,14 @@
             if (report.indicators && report.indicators.length > 0) {
                 report.indicators.forEach(ind => {
                     const indicatorBadge = document.createElement('div');
-                    indicatorBadge.className = "flex items-center space-x-2 text-xs text-rose-600 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-lg";
-                    indicatorBadge.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-500"></i><span id="ind-text-node"></span>`;
+                    indicatorBadge.className = "flex items-center space-x-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-lg";
+                    indicatorBadge.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-400"></i><span id="ind-text-node"></span>`;
                     indicatorBadge.querySelector('#ind-text-node').innerText = ind;
                     indicatorBadge.querySelector('#ind-text-node').removeAttribute('id');
                     indicatorsBox.appendChild(indicatorBadge);
                 });
             } else {
-                indicatorsBox.innerHTML = '<div class="text-slate-400 text-xs italic">No specific indicators listed.</div>';
+                indicatorsBox.innerHTML = '<div class="text-slate-500 text-xs italic">No specific indicators listed.</div>';
             }
         }
 
@@ -598,7 +664,7 @@
             .then(data => {
                 if (data.status === 'success') {
                     socButton.innerText = "Reported";
-                    socButton.className = "px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-500 bg-slate-50 opacity-60 pointer-events-none";
+                    socButton.className = "px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-700 text-slate-500 bg-slate-800 opacity-60 pointer-events-none";
                 } else {
                     throw new Error(data.message || 'Unexpected response');
                 }
@@ -621,7 +687,7 @@
 
             activeQuizData.options.forEach((opt, idx) => {
                 const optBtn = document.createElement('button');
-                optBtn.className = "w-full text-left bg-slate-50 hover:bg-slate-100 border border-slate-200 p-2.5 rounded-lg text-xs transition duration-150 cursor-pointer font-medium focus:outline-none focus:ring-1 focus:ring-purple-400";
+                optBtn.className = "w-full text-left bg-slate-800/60 hover:bg-slate-800 border border-slate-700 p-2.5 rounded-lg text-xs transition duration-150 cursor-pointer font-medium text-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500";
                 optBtn.innerText = opt;
                 optBtn.disabled = false;
                 optBtn.onclick = () => evaluateQuizSelection(idx, optBtn);
@@ -681,15 +747,15 @@
 
             feedback.classList.remove('hidden');
             if (selectedIndex === activeQuizData.correct_index) {
-                clickedButton.className = "w-full text-left bg-emerald-50 border border-emerald-400 text-emerald-600 p-2.5 rounded-lg text-xs font-semibold";
-                feedback.className = "text-xs p-3.5 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-600 leading-relaxed";
+                clickedButton.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold";
+                feedback.className = "text-xs p-3.5 rounded-lg border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 leading-relaxed";
                 feedback.innerHTML = `<strong><i class="fa-solid fa-circle-check mr-1.5"></i>Correct:</strong> ${activeQuizData.explanation}`;
             } else {
-                clickedButton.className = "w-full text-left bg-rose-50 border border-rose-400 text-rose-600 p-2.5 rounded-lg text-xs font-semibold";
-                feedback.className = "text-xs p-3.5 rounded-lg border bg-rose-50 border-rose-200 text-rose-600 leading-relaxed";
+                clickedButton.className = "w-full text-left bg-rose-500/10 border border-rose-500/40 text-rose-400 p-2.5 rounded-lg text-xs font-semibold";
+                feedback.className = "text-xs p-3.5 rounded-lg border bg-rose-500/10 border-rose-500/30 text-rose-400 leading-relaxed";
 
                 const correctBtn = optionsBox.children[activeQuizData.correct_index];
-                if (correctBtn) correctBtn.className = "w-full text-left bg-emerald-50 border border-emerald-300 text-emerald-600 p-2.5 rounded-lg text-xs font-semibold";
+                if (correctBtn) correctBtn.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold";
 
                 feedback.innerHTML = `<strong><i class="fa-solid fa-circle-xmark mr-1.5"></i>Not quite:</strong> ${activeQuizData.explanation}`;
             }

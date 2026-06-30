@@ -63,3 +63,38 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## Project: GuardMail AI
+
+A Flask + Gmail OAuth dashboard (deployed on Vercel) plus a Chrome extension.
+It scans a user's inbox for phishing/spam/spoofed senders, scores each
+message's risk, and uses Groq (Llama 3.1) to generate a threat report and a
+quiz so users learn to spot scams themselves.
+
+**Layout:**
+- `api/index.py` — Flask backend: OAuth login, Gmail fetch/scoring, Groq calls, all routes.
+- `templates/index.html` — single-page dashboard (Tailwind + vanilla JS), server-rendered on load then JS-driven (search/sort, AI/quiz panes).
+- `extension/` — Manifest V3 Chrome extension; injects a scan button into Gmail, posts to `/api/analyze-ext`, backend URL configurable via `extension/options.html`.
+- `tests/` — pytest coverage for the pure scoring/classification helpers in `api/index.py`.
+
+Full setup, env vars, and architecture are in `README.md` — read that first for
+onboarding context rather than re-deriving it from the code.
+
+**History:** this was originally a half-broken prototype (a corrupted,
+duplicated `templates/index.html`, and the extension calling a backend route
+that didn't exist). Both were fixed, then a broader production-readiness pass
+followed: wired up the previously-dead Groq categorizer, removed an insecure
+hardcoded secret-key fallback, locked down session cookies and CORS, handled
+expired Gmail sessions gracefully, batched Gmail API calls, added per-IP rate
+limiting on the Groq-backed routes, added inbox search/sort and client-side
+AI/quiz result caching, made the extension's backend URL configurable, added
+unit tests, and wrote the README.
+
+**Known, deliberate limitations** (see README "Known limitations" for why):
+SOC-report state and the rate limiter are in-memory only — they reset on
+serverless cold starts. This was a conscious choice to avoid adding external
+infrastructure (a DB/KV store), not an oversight — don't "fix" it without
+checking with the user first, since it's a real architecture tradeoff with
+cost/complexity implications.
