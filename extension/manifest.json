@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "GuardMail AI - Threat Auditor Bridge",
+  "version": "1.3",
+  "description": "Extracts text profiles from active Gmail elements to evaluate indicators of compromise.",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}

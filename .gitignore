@@ -1,0 +1,27 @@
+# Security: Never leak private environment keys
+.env
+
+# Python: Ignore compiled bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments: Ignore local virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Operating System clutter files
+.DS_Store
+Thumbs.db
+
+# Vercel: Ignore local development build logs
+.vercel/
+
+# Claude Code: local-only permission settings, not shared project config
+.claude/settings.local.json
+
+# pytest
+.pytest_cache/
