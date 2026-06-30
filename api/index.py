@@ -23,7 +23,7 @@ DEBUG_MODE = os.getenv("FLASK_DEBUG", "0") == "1"
 if DEBUG_MODE:
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-app = Flask(__name__, template_folder='../templates')
+app = Flask(__name__, template_folder='../templates', static_folder='../static', static_url_path='/static')
 
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
 if not FLASK_SECRET_KEY:
@@ -426,10 +426,14 @@ def fetch_gmail_emails(page_token=None, reported_ids=None):
 
 
 def _reported_ids_for_session():
+    """Cached in the session so a Supabase round-trip only happens once per login,
+    not on every inbox page load/refresh."""
+    if 'reported_ids' in session:
+        return set(session['reported_ids'])
     user_email = session.get('user_email')
-    if SUPABASE_CONFIGURED and user_email:
-        return get_reported_case_ids(user_email)
-    return REPORTED_SOC_IDS
+    ids = get_reported_case_ids(user_email) if (SUPABASE_CONFIGURED and user_email) else set(REPORTED_SOC_IDS)
+    session['reported_ids'] = list(ids)
+    return ids
 
 
 @app.route('/')
@@ -530,6 +534,11 @@ def stream_feed_state():
 def report_to_soc(email_id):
     """Documents incident and escalates telemetry properties to the Enterprise SOC layer."""
     REPORTED_SOC_IDS.add(email_id)
+
+    cached_ids = session.get('reported_ids', [])
+    if email_id not in cached_ids:
+        cached_ids.append(email_id)
+    session['reported_ids'] = cached_ids
 
     user_email = session.get('user_email')
     if SUPABASE_CONFIGURED and user_email:

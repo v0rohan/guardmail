@@ -27,3 +27,6 @@ Thumbs.db
 .pytest_cache/
 .vercel
 .env*
+
+# Node: only needed locally to rebuild static/css/tailwind.css
+node_modules/
