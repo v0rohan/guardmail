@@ -41,39 +41,34 @@
 </main>
 {% else %}
 
-<script>
-    window.allEmails = {{ emails|tojson|safe if emails else '[]' }};
-    window.nextPageToken = {{ next_token|tojson|safe if next_token else '""' }};
-</script>
-
 <main class="max-w-7xl mx-auto p-4 lg:p-6 space-y-6">
 
     <section class="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
             <div>
                 <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Messages scanned</p>
-                <p class="text-2xl font-bold font-mono text-white mt-1">{{ analytics.total }}</p>
+                <p class="text-2xl font-bold font-mono text-white mt-1" id="stat-total">&mdash;</p>
             </div>
             <div class="p-2.5 bg-slate-800 rounded-xl text-slate-400"><i class="fa-solid fa-inbox text-lg"></i></div>
         </div>
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-rose-500/40 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
             <div>
                 <p class="text-[11px] uppercase tracking-wide text-rose-400 font-medium">Spoofed senders</p>
-                <p class="text-2xl font-bold font-mono text-rose-400 mt-1">{{ analytics.spoofed }}</p>
+                <p class="text-2xl font-bold font-mono text-rose-400 mt-1" id="stat-spoofed">&mdash;</p>
             </div>
             <div class="p-2.5 bg-rose-500/10 rounded-xl text-rose-400"><i class="fa-solid fa-mask text-lg"></i></div>
         </div>
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-amber-500/40 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
             <div>
                 <p class="text-[11px] uppercase tracking-wide text-amber-400 font-medium">Reported cases</p>
-                <p class="text-2xl font-bold font-mono text-amber-400 mt-1">{{ analytics.soc_cases }}</p>
+                <p class="text-2xl font-bold font-mono text-amber-400 mt-1" id="stat-reported">&mdash;</p>
             </div>
             <div class="p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><i class="fa-solid fa-flag text-lg"></i></div>
         </div>
         <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between transition-all duration-200 hover:border-slate-700 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
             <div>
                 <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Scam rate</p>
-                <p class="text-2xl font-bold font-mono text-white mt-1">{{ analytics.percentage }}%</p>
+                <p class="text-2xl font-bold font-mono text-white mt-1" id="stat-percentage">&mdash;</p>
             </div>
             <div class="p-2.5 bg-slate-800 rounded-xl text-slate-400"><i class="fa-solid fa-chart-line text-lg"></i></div>
         </div>
@@ -105,71 +100,21 @@
                 </div>
             </div>
 
-            <div class="divide-y divide-slate-800 overflow-y-auto flex-1 min-h-[450px] max-h-[650px]">
-                {% if fetch_error %}
-                <div class="p-4 m-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs text-rose-400 flex items-start space-x-2">
-                    <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
-                    <div>
-                        <p class="font-semibold">Couldn't load your inbox</p>
-                        <p class="mt-0.5">{{ fetch_error }}</p>
-                        <button onclick="window.location.reload()" class="mt-2 underline font-medium">Try again</button>
-                    </div>
-                </div>
-                {% endif %}
-
+            <div id="inbox-scroll-area" class="divide-y divide-slate-800 overflow-y-auto flex-1 min-h-[450px] max-h-[650px]">
                 <div id="email-cards-container">
-                    {% if not fetch_error and emails|length == 0 %}
                     <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
-                        <i class="fa-regular fa-folder-open text-3xl opacity-50"></i>
-                        <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages found. Once your inbox has mail, it'll show up here.</p>
+                        <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-400"></i>
+                        <p class="text-sm">Scanning your inbox...</p>
                     </div>
-                    {% endif %}
-
-                    {% for email in emails %}
-                    <div onclick="selectEmail('{{ email.id }}')"
-                         id="email-card-{{ email.id }}"
-                         class="p-4 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 relative flex gap-3
-                                {% if email.initial_category == 'Scam Alert' %}border-rose-500
-                                {% elif email.initial_category == 'Spam' %}border-amber-500
-                                {% elif email.initial_category == 'High Priority' %}border-purple-500
-                                {% else %}border-transparent{% endif %}">
-
-                        <div class="w-9 h-9 rounded-full {{ email.sender|avatar_color }} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">{{ email.sender|initials }}</div>
-
-                        <div class="min-w-0 flex-1">
-                            <div class="flex justify-between items-start mb-1">
-                                <span class="text-sm font-medium text-slate-200 truncate max-w-[180px] block">{{ email.sender }}</span>
-                                <span class="text-[10px] text-slate-500 whitespace-nowrap ml-2">{{ email.date }}</span>
-                            </div>
-
-                            <h3 class="text-sm font-semibold text-white truncate mb-1">{{ email.subject if email.subject else '(No Subject)' }}</h3>
-                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ email.body }}</p>
-
-                            <div class="mt-3 flex items-center justify-between">
-                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold
-                                    {% if email.initial_category == 'Scam Alert' %}bg-rose-500/10 text-rose-400 border border-rose-500/30
-                                    {% elif email.initial_category == 'Spam' %}bg-amber-500/10 text-amber-400 border border-amber-500/30
-                                    {% elif email.initial_category == 'High Priority' %}bg-purple-500/10 text-purple-400 border border-purple-500/30
-                                    {% else %}bg-slate-800 text-slate-400 border border-slate-700{% endif %}">
-                                    {{ email.initial_category }}
-                                </span>
-                                <span class="text-xs font-medium font-mono text-slate-500">Risk: {{ email.risk_score }}%</span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
                 </div>
 
-                <div id="load-more-container" class="p-3 bg-slate-900 text-center {% if not next_token %}hidden{% endif %}">
-                    <button onclick="loadNextBatch()" id="load-more-btn" class="w-full py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition cursor-pointer flex items-center justify-center space-x-2">
-                        <i class="fa-solid fa-chevron-down text-xs"></i>
-                        <span>Load more</span>
-                    </button>
-                    <div id="load-more-error" class="hidden mt-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2 text-left">
-                        <i class="fa-solid fa-circle-exclamation mr-1"></i>
-                        <span id="load-more-error-text"></span>
-                        <button onclick="loadNextBatch()" class="ml-1 underline font-medium">Try again</button>
-                    </div>
+                <div id="scroll-sentinel" class="hidden p-4 text-center text-slate-500 text-xs">
+                    <i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i>Loading more...
+                </div>
+                <div id="load-more-error" class="hidden m-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2 text-left">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>
+                    <span id="load-more-error-text"></span>
+                    <button onclick="loadNextBatch()" class="ml-1 underline font-medium">Try again</button>
                 </div>
             </div>
         </section>
@@ -260,8 +205,12 @@
 <script>
     let activeQuizData = null;
     let activeQuizEmail = null;
+    let isLoadingMore = false;
+    let scrollObserver = null;
     const aiResultsCache = new Map();
     const quizResultsCache = new Map();
+    window.allEmails = [];
+    window.nextPageToken = '';
 
     function escapeHtml(str) {
         return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -333,7 +282,13 @@
     function renderInboxList(emailsToRender) {
         const container = document.getElementById('email-cards-container');
         if (emailsToRender.length === 0) {
-            container.innerHTML = `
+            const isTrulyEmpty = window.allEmails.length === 0;
+            container.innerHTML = isTrulyEmpty ? `
+                <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
+                    <i class="fa-regular fa-folder-open text-3xl opacity-50"></i>
+                    <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages found. Once your inbox has mail, it'll show up here.</p>
+                </div>
+            ` : `
                 <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
                     <i class="fa-solid fa-magnifying-glass text-3xl opacity-50"></i>
                     <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages match your search.</p>
@@ -367,6 +322,63 @@
         }
 
         renderInboxList(filtered);
+    }
+
+    function updateAnalytics(analytics) {
+        if (!analytics) return;
+        document.getElementById('stat-total').innerText = analytics.total;
+        document.getElementById('stat-spoofed').innerText = analytics.spoofed;
+        document.getElementById('stat-reported').innerText = analytics.soc_cases;
+        document.getElementById('stat-percentage').innerText = analytics.percentage + '%';
+    }
+
+    function showInboxError(message) {
+        const container = document.getElementById('email-cards-container');
+        container.innerHTML = `
+            <div class="p-4 m-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs text-rose-400 flex items-start space-x-2">
+                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                <div>
+                    <p class="font-semibold">Couldn't load your inbox</p>
+                    <p class="mt-0.5">${escapeHtml(message)}</p>
+                    <button onclick="window.location.reload()" class="mt-2 underline font-medium">Try again</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function setupInfiniteScroll() {
+        const sentinel = document.getElementById('scroll-sentinel');
+        const scrollRoot = document.getElementById('inbox-scroll-area');
+        if (scrollObserver) scrollObserver.disconnect();
+        if (!window.nextPageToken) return;
+        scrollObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) loadNextBatch();
+        }, { root: scrollRoot, rootMargin: '200px' });
+        scrollObserver.observe(sentinel);
+    }
+
+    function loadInitialInbox() {
+        fetch('/api/feed-state')
+            .then(res => {
+                if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    showInboxError(data.error);
+                    return;
+                }
+                window.allEmails = data.emails || [];
+                window.nextPageToken = data.next_token || '';
+                updateAnalytics(data.analytics);
+                applyFilters();
+                setupInfiniteScroll();
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetEmailId = urlParams.get('emailId');
+                if (targetEmailId) selectEmail(targetEmailId, false);
+            })
+            .catch(err => showInboxError(err.message));
     }
 
     function selectEmail(id, triggerUrlUpdate = true) {
@@ -541,17 +553,15 @@
     }
 
     function loadNextBatch() {
-        if (!window.nextPageToken) return;
+        if (!window.nextPageToken || isLoadingMore) return;
+        isLoadingMore = true;
 
-        const loadBtn = document.getElementById('load-more-btn');
-        const container = document.getElementById('load-more-container');
+        const sentinel = document.getElementById('scroll-sentinel');
         const errorBox = document.getElementById('load-more-error');
         const errorText = document.getElementById('load-more-error-text');
-        const originalInner = loadBtn.innerHTML;
 
         errorBox.classList.add('hidden');
-        loadBtn.disabled = true;
-        loadBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs mr-1.5"></i><span>Loading...</span>`;
+        sentinel.classList.remove('hidden');
 
         fetch(`/api/feed-state?pageToken=${window.nextPageToken}`)
             .then(res => {
@@ -559,8 +569,8 @@
                 return res.json();
             })
             .then(data => {
-                loadBtn.disabled = false;
-                loadBtn.innerHTML = originalInner;
+                isLoadingMore = false;
+                sentinel.classList.add('hidden');
 
                 if (data.error) {
                     errorBox.classList.remove('hidden');
@@ -578,13 +588,13 @@
                 }
 
                 window.nextPageToken = data.next_token || '';
-                if (!window.nextPageToken) {
-                    container.classList.add('hidden');
+                if (!window.nextPageToken && scrollObserver) {
+                    scrollObserver.disconnect();
                 }
             })
             .catch(err => {
-                loadBtn.disabled = false;
-                loadBtn.innerHTML = originalInner;
+                isLoadingMore = false;
+                sentinel.classList.add('hidden');
                 errorBox.classList.remove('hidden');
                 errorText.innerText = "Couldn't load more messages (" + err.message + ").";
             });
@@ -707,16 +717,7 @@
         }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        if (window.allEmails && window.allEmails.length > 0) {
-            applyFilters();
-        }
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetEmailId = urlParams.get('emailId');
-        if (targetEmailId) {
-            selectEmail(targetEmailId, false);
-        }
-    });
+    window.addEventListener('DOMContentLoaded', loadInitialInbox);
 </script>
 {% endif %}
 {% endblock %}

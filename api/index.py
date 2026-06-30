@@ -140,32 +140,19 @@ DANGEROUS_URL_KEYWORDS = [
     "update", "paypal", "bank", "signin", "verification", "credentials"
 ]
 
-AVATAR_COLORS = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-amber-500",
-                  "bg-rose-500", "bg-cyan-500", "bg-indigo-500", "bg-teal-500"]
 
-
-def get_initials(sender: str) -> str:
-    """Returns a single uppercase initial for a sender's display name (or email if none)."""
-    name = sender.split('<')[0].strip()
-    if not name:
-        match = re.search(r'<([^>]+)>', sender)
-        name = match.group(1) if match else sender
-    return (name[:1] or '?').upper()
-
-
-def get_avatar_color(sender: str) -> str:
-    """Deterministically maps a sender string to a Tailwind background color class."""
-    return AVATAR_COLORS[sum(ord(c) for c in sender) % len(AVATAR_COLORS)]
-
-
-app.jinja_env.filters['initials'] = get_initials
-app.jinja_env.filters['avatar_color'] = get_avatar_color
+def _contains_whole_word(text: str, keywords: list) -> bool:
+    """Whole-word match so e.g. 'secure' doesn't false-positive match inside 'security'."""
+    return any(re.search(rf'\b{re.escape(k)}\b', text) for k in keywords)
 
 
 def detect_spoofing(sender_str: str) -> bool:
     """Detects if a popular brand name is being impersonated in the sender display string."""
     sender_lower = sender_str.lower()
-    monitored_brands = ["paypal", "meta", "google", "netflix", "amazon", "apple", "bank", "security"]
+    # "security" deliberately excluded: it's a generic word, not a brand name, and
+    # flagged nearly every legitimate "security alert" email (Google, GitHub, banks...)
+    # as spoofed since real security-team senders rarely have "security" in their domain.
+    monitored_brands = ["paypal", "meta", "google", "netflix", "amazon", "apple", "bank"]
     
     email_match = re.search(r'<([^>]+)>', sender_str)
     if email_match:
@@ -222,7 +209,7 @@ def parse_and_sandbox_links(body_text):
             "url": url.rstrip(".,;:"),
             "safety_status": (
                 "Dangerous / Blacklisted Match"
-                if any(k in url.lower() for k in DANGEROUS_URL_KEYWORDS)
+                if _contains_whole_word(url.lower(), DANGEROUS_URL_KEYWORDS)
                 else "External Link / Unverified Clear"
             )
         }
@@ -233,9 +220,9 @@ def parse_and_sandbox_links(body_text):
 def fallback_categorize(body: str) -> str:
     """Local keyword-based fallback categorizer."""
     lower = body.lower()
-    if any(k in lower for k in SCAM_KEYWORDS):
+    if _contains_whole_word(lower, SCAM_KEYWORDS):
         return "Scam Alert"
-    if any(k in lower for k in SPAM_KEYWORDS):
+    if _contains_whole_word(lower, SPAM_KEYWORDS):
         return "Spam"
     return "Important"
 
@@ -439,12 +426,11 @@ def _reported_ids_for_session():
 @app.route('/')
 def index():
     if 'credentials' not in session:
-        return render_template('index.html', logged_in=False, emails=[], next_token=None, analytics={"total": 0, "spoofed": 0, "soc_cases": 0, "percentage": 0}, fetch_error=None)
-
-    current_token = request.args.get('pageToken', None)
-    emails, next_token, fetch_error = fetch_gmail_emails(page_token=current_token, reported_ids=_reported_ids_for_session())
-    analytics = calculate_analytics(emails)
-    return render_template('index.html', logged_in=True, active_page='inbox', emails=emails, next_token=next_token, analytics=analytics, fetch_error=fetch_error)
+        return render_template('index.html', logged_in=False)
+    # Emails are fetched client-side via /api/feed-state on page load instead of
+    # blocking this response - Gmail + AI categorization can take a few seconds,
+    # and that shouldn't delay showing the page shell.
+    return render_template('index.html', logged_in=True, active_page='inbox')
 
 
 @app.route('/login')

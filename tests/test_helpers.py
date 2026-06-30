@@ -14,6 +14,10 @@ class TestDetectSpoofing:
     def test_flags_brand_in_local_part_without_angle_brackets(self):
         assert index.detect_spoofing("paypal-support@evil-domain.tk") is True
 
+    def test_does_not_flag_legitimate_security_alert_senders(self):
+        assert index.detect_spoofing("Google Security <no-reply@accounts.google.com>") is False
+        assert index.detect_spoofing("Apple Security <security@apple.com>") is False
+
 
 class TestCalculateRiskIndex:
     def test_scam_alert_base_score(self):
@@ -48,6 +52,14 @@ class TestParseAndSandboxLinks:
     def test_strips_trailing_punctuation(self):
         links = index.parse_and_sandbox_links("Visit https://example.com/page.")
         assert links[0]["url"] == "https://example.com/page"
+
+    def test_does_not_flag_security_as_substring_of_secure(self):
+        links = index.parse_and_sandbox_links("Review at https://myaccount.google.com/security")
+        assert links[0]["safety_status"] == "External Link / Unverified Clear"
+
+    def test_still_flags_secure_as_a_whole_word(self):
+        links = index.parse_and_sandbox_links("Confirm at http://paypal-secure-verify.com")
+        assert links[0]["safety_status"] == "Dangerous / Blacklisted Match"
 
 
 class TestFallbackCategorize:
