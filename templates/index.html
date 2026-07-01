@@ -83,7 +83,7 @@
                         <i class="fa-solid fa-inbox text-slate-500"></i>
                         <span>Inbox</span>
                     </h2>
-                    <button onclick="window.location.reload()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+                    <button onclick="refreshInbox()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium px-2.5 py-1.5 rounded-lg transition cursor-pointer">
                         <i class="fa-solid fa-arrow-rotate-right mr-1"></i> Refresh
                     </button>
                 </div>
@@ -108,9 +108,7 @@
                     </div>
                 </div>
 
-                <div id="scroll-sentinel" class="hidden p-4 text-center text-slate-500 text-xs">
-                    <i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i>Loading more...
-                </div>
+                <div id="scroll-sentinel" class="hidden p-4 text-center text-slate-500 text-xs"></div>
                 <div id="load-more-error" class="hidden m-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2 text-left">
                     <i class="fa-solid fa-circle-exclamation mr-1"></i>
                     <span id="load-more-error-text"></span>
@@ -324,12 +322,48 @@
         renderInboxList(filtered);
     }
 
+    const INBOX_CACHE_KEY = 'guardmail_inbox_cache';
+    let lastAnalytics = null;
+
     function updateAnalytics(analytics) {
         if (!analytics) return;
+        lastAnalytics = analytics;
         document.getElementById('stat-total').innerText = analytics.total;
         document.getElementById('stat-spoofed').innerText = analytics.spoofed;
         document.getElementById('stat-reported').innerText = analytics.soc_cases;
         document.getElementById('stat-percentage').innerText = analytics.percentage + '%';
+    }
+
+    function saveInboxCache() {
+        try {
+            sessionStorage.setItem(INBOX_CACHE_KEY, JSON.stringify({
+                emails: window.allEmails,
+                nextPageToken: window.nextPageToken,
+                analytics: lastAnalytics,
+            }));
+        } catch (e) {
+            // sessionStorage unavailable/full - caching is a nice-to-have, not critical
+        }
+    }
+
+    function loadInboxCache() {
+        try {
+            const raw = sessionStorage.getItem(INBOX_CACHE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function refreshInbox() {
+        try { sessionStorage.removeItem(INBOX_CACHE_KEY); } catch (e) {}
+        window.location.reload();
+    }
+
+    function selectEmailFromUrlIfPresent() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetEmailId = urlParams.get('emailId');
+        if (targetEmailId) selectEmail(targetEmailId, false);
     }
 
     function showInboxError(message) {
@@ -340,7 +374,7 @@
                 <div>
                     <p class="font-semibold">Couldn't load your inbox</p>
                     <p class="mt-0.5">${escapeHtml(message)}</p>
-                    <button onclick="window.location.reload()" class="mt-2 underline font-medium">Try again</button>
+                    <button onclick="refreshInbox()" class="mt-2 underline font-medium">Try again</button>
                 </div>
             </div>
         `;
@@ -350,14 +384,29 @@
         const sentinel = document.getElementById('scroll-sentinel');
         const scrollRoot = document.getElementById('inbox-scroll-area');
         if (scrollObserver) scrollObserver.disconnect();
-        if (!window.nextPageToken) return;
+        if (!window.nextPageToken) {
+            sentinel.classList.add('hidden');
+            return;
+        }
+        sentinel.classList.remove('hidden');
         scrollObserver = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting) loadNextBatch();
-        }, { root: scrollRoot, rootMargin: '200px' });
+        }, { root: scrollRoot, rootMargin: '300px' });
         scrollObserver.observe(sentinel);
     }
 
     function loadInitialInbox() {
+        const cached = loadInboxCache();
+        if (cached && cached.emails && cached.emails.length > 0) {
+            window.allEmails = cached.emails;
+            window.nextPageToken = cached.nextPageToken || '';
+            updateAnalytics(cached.analytics);
+            applyFilters();
+            setupInfiniteScroll();
+            selectEmailFromUrlIfPresent();
+            return;
+        }
+
         fetch('/api/feed-state')
             .then(res => {
                 if (!res.ok) throw new Error(`Server responded with ${res.status}`);
@@ -371,12 +420,10 @@
                 window.allEmails = data.emails || [];
                 window.nextPageToken = data.next_token || '';
                 updateAnalytics(data.analytics);
+                saveInboxCache();
                 applyFilters();
                 setupInfiniteScroll();
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const targetEmailId = urlParams.get('emailId');
-                if (targetEmailId) selectEmail(targetEmailId, false);
+                selectEmailFromUrlIfPresent();
             })
             .catch(err => showInboxError(err.message));
     }
@@ -561,7 +608,7 @@
         const errorText = document.getElementById('load-more-error-text');
 
         errorBox.classList.add('hidden');
-        sentinel.classList.remove('hidden');
+        sentinel.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i>Loading more...`;
 
         fetch(`/api/feed-state?pageToken=${window.nextPageToken}`)
             .then(res => {
@@ -570,7 +617,7 @@
             })
             .then(data => {
                 isLoadingMore = false;
-                sentinel.classList.add('hidden');
+                sentinel.innerHTML = '';
 
                 if (data.error) {
                     errorBox.classList.remove('hidden');
@@ -588,13 +635,15 @@
                 }
 
                 window.nextPageToken = data.next_token || '';
-                if (!window.nextPageToken && scrollObserver) {
-                    scrollObserver.disconnect();
+                saveInboxCache();
+                if (!window.nextPageToken) {
+                    sentinel.classList.add('hidden');
+                    if (scrollObserver) scrollObserver.disconnect();
                 }
             })
             .catch(err => {
                 isLoadingMore = false;
-                sentinel.classList.add('hidden');
+                sentinel.innerHTML = '';
                 errorBox.classList.remove('hidden');
                 errorText.innerText = "Couldn't load more messages (" + err.message + ").";
             });
@@ -621,6 +670,12 @@
             if (data.status === 'success') {
                 socButton.innerText = "Reported";
                 socButton.className = "px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-700 text-slate-500 bg-slate-800 opacity-60 pointer-events-none";
+                email.soc_reported = true;
+                if (lastAnalytics) {
+                    lastAnalytics.soc_cases = (lastAnalytics.soc_cases || 0) + 1;
+                    updateAnalytics(lastAnalytics);
+                }
+                saveInboxCache();
             } else {
                 throw new Error(data.message || 'Unexpected response');
             }

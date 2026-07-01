@@ -334,7 +334,7 @@ def fetch_gmail_emails(page_token=None, reported_ids=None):
         service = build('gmail', 'v1', credentials=credentials)
 
         # Inject pageToken query parameter into the active request context map
-        results = service.users().messages().list(userId='me', maxResults=10, pageToken=page_token).execute()
+        results = service.users().messages().list(userId='me', maxResults=5, pageToken=page_token).execute()
         messages = results.get('messages', [])
         next_page_token = results.get('nextPageToken', None)
 
