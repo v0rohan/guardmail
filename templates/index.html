@@ -323,11 +323,21 @@
     }
 
     const INBOX_CACHE_KEY = 'guardmail_inbox_cache';
-    let lastAnalytics = null;
 
-    function updateAnalytics(analytics) {
-        if (!analytics) return;
-        lastAnalytics = analytics;
+    // Analytics are always derived from the full accumulated window.allEmails list
+    // (not the per-page numbers /api/feed-state returns), so the stat cards stay
+    // correct as more pages load in via infinite scroll.
+    function computeAnalytics(emails) {
+        const total = emails.length;
+        const scams = emails.filter(e => e.initial_category === 'Scam Alert').length;
+        const spoofed = emails.filter(e => e.spoofing_detected).length;
+        const socCases = emails.filter(e => e.soc_reported).length;
+        const percentage = total > 0 ? Math.round((scams / total) * 100) : 0;
+        return { total, spoofed, soc_cases: socCases, percentage };
+    }
+
+    function updateAnalytics() {
+        const analytics = computeAnalytics(window.allEmails);
         document.getElementById('stat-total').innerText = analytics.total;
         document.getElementById('stat-spoofed').innerText = analytics.spoofed;
         document.getElementById('stat-reported').innerText = analytics.soc_cases;
@@ -339,7 +349,6 @@
             sessionStorage.setItem(INBOX_CACHE_KEY, JSON.stringify({
                 emails: window.allEmails,
                 nextPageToken: window.nextPageToken,
-                analytics: lastAnalytics,
             }));
         } catch (e) {
             // sessionStorage unavailable/full - caching is a nice-to-have, not critical
@@ -400,7 +409,7 @@
         if (cached && cached.emails && cached.emails.length > 0) {
             window.allEmails = cached.emails;
             window.nextPageToken = cached.nextPageToken || '';
-            updateAnalytics(cached.analytics);
+            updateAnalytics();
             applyFilters();
             setupInfiniteScroll();
             selectEmailFromUrlIfPresent();
@@ -419,7 +428,7 @@
                 }
                 window.allEmails = data.emails || [];
                 window.nextPageToken = data.next_token || '';
-                updateAnalytics(data.analytics);
+                updateAnalytics();
                 saveInboxCache();
                 applyFilters();
                 setupInfiniteScroll();
@@ -631,6 +640,7 @@
                             window.allEmails.push(email);
                         }
                     });
+                    updateAnalytics();
                     applyFilters();
                 }
 
@@ -671,10 +681,7 @@
                 socButton.innerText = "Reported";
                 socButton.className = "px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-700 text-slate-500 bg-slate-800 opacity-60 pointer-events-none";
                 email.soc_reported = true;
-                if (lastAnalytics) {
-                    lastAnalytics.soc_cases = (lastAnalytics.soc_cases || 0) + 1;
-                    updateAnalytics(lastAnalytics);
-                }
+                updateAnalytics();
                 saveInboxCache();
             } else {
                 throw new Error(data.message || 'Unexpected response');

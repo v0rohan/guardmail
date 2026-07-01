@@ -72,5 +72,11 @@ class TestFallbackCategorize:
     def test_scam_takes_priority_over_spam(self):
         assert index.fallback_categorize("Free discount, please verify your bank account") == "Scam Alert"
 
+    def test_does_not_flag_legitimate_verify_or_login_language(self):
+        assert index.fallback_categorize(
+            "Action Required: Please verify your student account information before "
+            "the registration deadline. Log in to BuckeyeLink to confirm your details."
+        ) == "Important"
+
     def test_neutral_body_is_important(self):
         assert index.fallback_categorize("Let's meet for lunch tomorrow") == "Important"

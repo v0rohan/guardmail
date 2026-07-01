@@ -133,7 +133,11 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 # Global tracking framework for reported cases (persisted runtime fallback)
 REPORTED_SOC_IDS = set()
 
-SCAM_KEYWORDS = ["paypal", "verify", "bank", "wire", "transfer", "login", "credentials", "bonus"]
+# "verify" and "login" deliberately excluded: they're extremely common in
+# legitimate transactional/security emails (university portals, 2FA prompts,
+# password-change confirmations) and were flagging real messages from official
+# domains as scams whenever Groq's call failed and this local fallback kicked in.
+SCAM_KEYWORDS = ["paypal", "bank", "wire", "transfer", "credentials", "bonus"]
 SPAM_KEYWORDS = ["buy", "discount", "free", "marketing", "promotion", "sale", "deals"]
 DANGEROUS_URL_KEYWORDS = [
     "verify", "login", "secure", "bonus", "claim", "portal",
