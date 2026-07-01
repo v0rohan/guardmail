@@ -98,6 +98,14 @@
                         <option value="risk">Highest risk</option>
                     </select>
                 </div>
+                <div id="category-filter-tags" class="flex items-center gap-1.5 flex-wrap">
+                    <button onclick="setCategoryFilter('All')" data-filter="All" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-blue-600 text-white border-blue-600">All</button>
+                    <button onclick="setCategoryFilter('Scam Alert')" data-filter="Scam Alert" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200">Scam Alert</button>
+                    <button onclick="setCategoryFilter('Suspicious')" data-filter="Suspicious" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200">Suspicious</button>
+                    <button onclick="setCategoryFilter('Spam')" data-filter="Spam" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200">Spam</button>
+                    <button onclick="setCategoryFilter('High Priority')" data-filter="High Priority" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200">High Priority</button>
+                    <button onclick="setCategoryFilter('Important')" data-filter="Important" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200">Important</button>
+                </div>
             </div>
 
             <div id="inbox-scroll-area" class="divide-y divide-slate-800 overflow-y-auto flex-1 min-h-[450px] max-h-[650px]">
@@ -243,36 +251,41 @@
         return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
 
-    function categoryClasses(category) {
-        if (category === 'Scam Alert') return { border: 'border-rose-500', badge: 'bg-rose-500/10 text-rose-400 border border-rose-500/30' };
-        if (category === 'Spam') return { border: 'border-amber-500', badge: 'bg-amber-500/10 text-amber-400 border border-amber-500/30' };
-        if (category === 'High Priority') return { border: 'border-purple-500', badge: 'bg-purple-500/10 text-purple-400 border border-purple-500/30' };
-        return { border: 'border-transparent', badge: 'bg-slate-800 text-slate-400 border border-slate-700' };
+    // The badge shown is driven by the actual risk_score, not the raw AI category -
+    // a bare "Scam Alert" classification with no other risk factors only scores 55,
+    // so labeling it as severely as a spoofed scam with dangerous links (80-100)
+    // was misleading. Category names only surface when risk is genuinely low.
+    function classifyEmail(email) {
+        const score = email.risk_score || 0;
+        if (score >= 70) return { label: 'Scam Alert', border: 'border-rose-500', badge: 'bg-rose-500/10 text-rose-400 border border-rose-500/30' };
+        if (score >= 40) return { label: 'Suspicious', border: 'border-amber-500', badge: 'bg-amber-500/10 text-amber-400 border border-amber-500/30' };
+        if (email.initial_category === 'Spam') return { label: 'Spam', border: 'border-amber-500', badge: 'bg-amber-500/10 text-amber-400 border border-amber-500/30' };
+        if (email.initial_category === 'High Priority') return { label: 'High Priority', border: 'border-purple-500', badge: 'bg-purple-500/10 text-purple-400 border border-purple-500/30' };
+        return { label: 'Important', border: 'border-transparent', badge: 'bg-slate-800 text-slate-400 border border-slate-700' };
     }
 
     function emailCardHtml(email) {
-        const { border, badge } = categoryClasses(email.initial_category);
+        const { label, border, badge } = classifyEmail(email);
         const cleanSender = escapeHtml(email.sender);
         const cleanSubject = escapeHtml(email.subject || '(No Subject)');
-        const cleanSnippet = escapeHtml((email.body || '').substring(0, 160));
+        const cleanSnippet = escapeHtml((email.body || '').substring(0, 120));
         const cleanInitials = escapeHtml(getInitials(email.sender));
         return `
             <div onclick="selectEmail('${email.id}')"
                  id="email-card-${email.id}"
-                 class="p-4 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 relative flex gap-3 ${border}">
+                 class="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/60 transition duration-150 cursor-pointer border-l-4 ${border}">
                 <div class="w-9 h-9 rounded-full ${getAvatarColor(email.sender)} flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">${cleanInitials}</div>
                 <div class="min-w-0 flex-1">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-sm font-medium text-slate-200 truncate max-w-[180px] block">${cleanSender}</span>
-                        <span class="text-[10px] text-slate-500 whitespace-nowrap ml-2">${formatRelativeTime(email.date)}</span>
+                    <div class="flex items-baseline justify-between gap-2">
+                        <span class="text-sm font-semibold text-slate-100 truncate">${cleanSender}</span>
+                        <span class="text-[10px] text-slate-500 whitespace-nowrap flex-shrink-0">${formatRelativeTime(email.date)}</span>
                     </div>
-                    <h3 class="text-sm font-semibold text-white truncate mb-1">${cleanSubject}</h3>
-                    <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${cleanSnippet}</p>
-                    <div class="mt-3 flex items-center justify-between">
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge}">${email.initial_category}</span>
-                        <span class="text-xs font-medium font-mono text-slate-500">Risk: ${email.risk_score}%</span>
-                    </div>
+                    <p class="text-xs text-slate-500 truncate mt-0.5">
+                        <span class="text-slate-300 font-medium">${cleanSubject}</span>
+                        <span> &mdash; ${cleanSnippet}</span>
+                    </p>
                 </div>
+                <span class="flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge}">${label}</span>
             </div>
         `;
     }
@@ -289,7 +302,7 @@
             ` : `
                 <div class="p-8 text-center text-slate-500 space-y-3 mt-16">
                     <i class="fa-solid fa-magnifying-glass text-3xl opacity-50"></i>
-                    <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages match your search.</p>
+                    <p class="text-sm max-w-xs mx-auto leading-relaxed">No messages match your search or filter.</p>
                 </div>
             `;
             return;
@@ -304,11 +317,28 @@
         }
     }
 
+    let activeCategoryFilter = 'All';
+
+    function setCategoryFilter(label) {
+        activeCategoryFilter = label;
+        document.querySelectorAll('#category-filter-tags button').forEach(btn => {
+            const isActive = btn.dataset.filter === label;
+            btn.classList.toggle('bg-blue-600', isActive);
+            btn.classList.toggle('text-white', isActive);
+            btn.classList.toggle('border-blue-600', isActive);
+            btn.classList.toggle('bg-slate-800', !isActive);
+            btn.classList.toggle('text-slate-400', !isActive);
+            btn.classList.toggle('border-slate-700', !isActive);
+        });
+        applyFilters();
+    }
+
     function applyFilters() {
         const query = (document.getElementById('inbox-search').value || '').trim().toLowerCase();
         const sortMode = document.getElementById('inbox-sort').value;
 
         let filtered = window.allEmails.filter(e => {
+            if (activeCategoryFilter !== 'All' && classifyEmail(e).label !== activeCategoryFilter) return false;
             if (!query) return true;
             return (e.sender || '').toLowerCase().includes(query)
                 || (e.subject || '').toLowerCase().includes(query)
@@ -329,7 +359,7 @@
     // correct as more pages load in via infinite scroll.
     function computeAnalytics(emails) {
         const total = emails.length;
-        const scams = emails.filter(e => e.initial_category === 'Scam Alert').length;
+        const scams = emails.filter(e => classifyEmail(e).label === 'Scam Alert').length;
         const spoofed = emails.filter(e => e.spoofing_detected).length;
         const socCases = emails.filter(e => e.soc_reported).length;
         const percentage = total > 0 ? Math.round((scams / total) * 100) : 0;
@@ -534,7 +564,7 @@
 
         quizPane.classList.add('hidden');
 
-        if (email.initial_category === 'Scam Alert' || email.risk_score >= 50) {
+        if (email.risk_score >= 40) {
             runAiAnalysis(email);
             document.getElementById('ai-retry-btn').onclick = () => runAiAnalysis(email);
         } else {
