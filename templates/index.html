@@ -5,20 +5,20 @@
 <main class="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center overflow-x-hidden">
     <div class="w-full max-w-6xl grid lg:grid-cols-12 gap-12 lg:gap-8 items-center text-left pt-6">
         <div class="lg:col-span-5">
-            <div class="anim-fade-up inline-flex items-center space-x-2 bg-zinc-900 border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-zinc-400">
-                <i class="fa-solid fa-shield-halved text-blue-400"></i>
-                <span>Free &middot; Read-only Gmail access &middot; Beta</span>
+            <div class="anim-fade-up inline-flex items-center space-x-2 bg-zinc-900/70 border border-zinc-800 rounded-full px-3.5 py-1.5 text-xs text-zinc-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>Email security without the jargon</span>
             </div>
 
-            <h1 class="anim-fade-up font-display text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight mt-6" style="animation-delay:.08s">
-                Don't get hooked.<br><span class="text-blue-400">GuardMail spots phishing before you do.</span>
+            <h1 class="anim-fade-up font-display text-5xl sm:text-6xl font-semibold text-white leading-[1.05] mt-6" style="animation-delay:.08s">
+                Trust your<br><span class="mark">inbox</span> again.
             </h1>
-            <p class="anim-fade-up mt-5 max-w-md text-zinc-400 leading-relaxed" style="animation-delay:.16s">
-                AI-powered scanning catches spoofed senders and malicious links in your Gmail inbox, then teaches you to recognize them yourself — so eventually, you won't need us.
+            <p class="anim-fade-up mt-6 max-w-md text-zinc-400 leading-relaxed" style="animation-delay:.16s">
+                GuardMail reads every message for phishing, spoofed senders, and shady links, then shows you plainly why something looks off. Learn the tells, and one day you won't need us.
             </p>
 
             <div class="anim-fade-up mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3" style="animation-delay:.24s">
-                <a href="/login" class="press inline-flex items-center justify-center space-x-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl cursor-pointer">
+                <a href="/login" class="press inline-flex items-center justify-center space-x-3 btn-primary font-semibold py-3 px-6 rounded-xl cursor-pointer shadow-lg shadow-black/40">
                     <i class="fa-brands fa-google"></i>
                     <span>Sign in with Google</span>
                 </a>
@@ -27,7 +27,7 @@
                     <span>Try the live demo</span>
                 </a>
             </div>
-            <p class="anim-fade-up mt-3 text-xs text-zinc-500" style="animation-delay:.32s">Read-only Gmail access &middot; the demo needs no account at all</p>
+            <p class="anim-fade-up mt-3 text-xs text-zinc-500" style="animation-delay:.32s">Read-only Gmail access. The demo needs no account at all.</p>
         </div>
 
         <!-- Static product preview: a hand-built miniature of the dashboard, purely decorative -->
@@ -64,7 +64,7 @@
                             <span class="w-7 h-7 rounded-full bg-rose-500 flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0">P</span>
                             <span class="min-w-0 flex-1">
                                 <span class="block text-xs font-semibold text-zinc-100 truncate">PayPal Support &lt;alerts@secure-pp.info&gt;</span>
-                                <span class="block text-[10px] text-zinc-500 truncate">Your account has been limited — verify now</span>
+                                <span class="block text-[10px] text-zinc-500 truncate">Your account has been limited: verify now</span>
                             </span>
                             <span class="mock-pop flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30" style="animation-delay:.5s">Scam Alert</span>
                         </div>
@@ -87,7 +87,7 @@
                     </div>
                     <div class="sm:col-span-2 bg-zinc-900 border border-zinc-800 rounded-lg p-3 space-y-2.5">
                         <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-semibold text-zinc-300"><i class="fa-solid fa-magnifying-glass-chart text-blue-400 mr-1"></i>AI Analysis</span>
+                            <span class="text-[10px] font-semibold text-zinc-300"><i class="fa-solid fa-magnifying-glass-chart u-accent mr-1"></i>AI Analysis</span>
                             <span class="text-sm font-bold font-mono text-rose-400">92%</span>
                         </div>
                         <div class="mock-pop text-[10px] text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2 py-1 rounded" style="animation-delay:.95s"><i class="fa-solid fa-mask mr-1"></i>Sender domain doesn't match PayPal</div>
@@ -102,29 +102,34 @@
 
     <!-- Scrolling ticker of real-world phishing subject lines -->
     <div class="reveal mt-20 w-full max-w-5xl" aria-hidden="true">
-        <p class="text-[11px] font-mono uppercase tracking-[.2em] text-zinc-600 mb-3 text-center">Subject lines we catch every day</p>
+        <p class="text-xs tracking-wide text-zinc-600 mb-3 text-center">Subject lines we catch every day</p>
         <div class="overflow-hidden border-y border-zinc-800/80 py-3 [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
-            <div class="marquee-track flex w-max gap-10 whitespace-nowrap text-sm text-zinc-500">
+            <!-- Each span carries its own trailing margin (marquee-item) instead of a
+                 flex `gap`: gap only inserts space *between* items (N-1 gaps), so with
+                 two duplicated halves the wrap point lands short by exactly one gap,
+                 producing a visible jump. A per-item margin makes every item's pitch
+                 (content + spacing) identical, so translateX(-50%) is an exact repeat. -->
+            <div class="marquee-track flex w-max whitespace-nowrap text-sm text-zinc-500">
                 {% for _ in range(2) %}
-                <span><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Your account has been suspended"</span>
-                <span><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Package on hold — action required"</span>
-                <span><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Unusual sign-in activity detected"</span>
-                <span><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"You've been selected for a $500 reward"</span>
-                <span><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Final notice: verify within 24 hours"</span>
-                <span><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Payment failed — update your card"</span>
-                <span><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Invoice #83921 attached"</span>
-                <span><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Re: your inheritance transfer"</span>
+                <span class="marquee-item"><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Your account has been suspended"</span>
+                <span class="marquee-item"><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Package on hold: action required"</span>
+                <span class="marquee-item"><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Unusual sign-in activity detected"</span>
+                <span class="marquee-item"><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"You've been selected for a $500 reward"</span>
+                <span class="marquee-item"><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Final notice: verify within 24 hours"</span>
+                <span class="marquee-item"><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Payment failed: update your card"</span>
+                <span class="marquee-item"><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Invoice #83921 attached"</span>
+                <span class="marquee-item"><i class="fa-solid fa-flag text-rose-400/60 mr-2"></i>"Re: your inheritance transfer"</span>
                 {% endfor %}
             </div>
         </div>
     </div>
 
     <!-- Interactive: spot the phish -->
-    <div class="mt-24 w-full max-w-4xl">
-        <p class="reveal text-[11px] font-mono uppercase tracking-[.2em] text-blue-400">Test yourself</p>
-        <h2 class="reveal font-display text-xl font-bold text-white tracking-tight mt-2" style="transition-delay:.05s">One of these is a scam. Can you tell?</h2>
-        <p class="reveal text-sm text-zinc-500 mt-1" style="transition-delay:.1s">Click the one you'd report.</p>
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+    <div class="mt-24 w-full max-w-5xl">
+        <p class="reveal eyebrow">Test yourself</p>
+        <h2 class="reveal font-display text-2xl sm:text-3xl font-semibold text-white mt-2" style="transition-delay:.05s">One of these is a scam. Can you tell?</h2>
+        <p class="reveal text-sm text-zinc-500 mt-2" style="transition-delay:.1s">Click the one you'd report.</p>
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left max-w-4xl">
             <button onclick="pickPhish(this, false)" class="game-card reveal bg-zinc-900 border-2 border-zinc-800 hover:border-zinc-600 rounded-xl p-5 cursor-pointer transition text-left">
                 <div class="flex items-center gap-3">
                     <span class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">S</span>
@@ -141,7 +146,7 @@
                     <span class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">S</span>
                     <span class="min-w-0">
                         <span class="block text-sm font-semibold text-zinc-100 truncate">Spotify Billing &lt;billing@spotify-account-services.net&gt;</span>
-                        <span class="block text-xs text-zinc-500 truncate">Payment failed — update your card</span>
+                        <span class="block text-xs text-zinc-500 truncate">Payment failed: update your card</span>
                     </span>
                 </div>
                 <p class="mt-3 text-xs text-zinc-400 leading-relaxed">We couldn't process your payment. Update your card within 24 hours to avoid losing Premium: spotify-account-services.net/billing</p>
@@ -151,75 +156,75 @@
         <div id="game-feedback" class="hidden mt-4 rounded-xl border p-4 text-sm text-left"></div>
     </div>
 
-    <div class="mt-24 max-w-3xl w-full">
-        <p class="reveal text-[11px] font-mono uppercase tracking-[.2em] text-blue-400">What it does</p>
-        <h2 class="reveal font-display text-xl font-bold text-white tracking-tight mt-2" style="transition-delay:.05s">Built to catch what you'd miss</h2>
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-            <div class="reveal lift bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5">
-                <div class="text-rose-400 mb-2"><i class="fa-solid fa-mask"></i></div>
-                <h3 class="text-sm font-semibold text-white mb-1">Spoofing detection</h3>
-                <p class="text-xs text-zinc-400 leading-relaxed">Flags senders impersonating brands you trust.</p>
+    <div class="mt-24 max-w-5xl w-full grid lg:grid-cols-5 gap-8 lg:gap-14 text-left">
+        <div class="lg:col-span-2">
+            <p class="reveal eyebrow">What it does</p>
+            <h2 class="reveal font-display text-2xl sm:text-3xl font-semibold text-white mt-3" style="transition-delay:.05s">Built to catch what you'd miss</h2>
+            <p class="reveal text-sm text-zinc-500 mt-3 leading-relaxed" style="transition-delay:.1s">Three checks run on every message, so a scam has to beat all of them to reach you.</p>
+        </div>
+        <div class="lg:col-span-3 divide-y divide-zinc-800 border-t border-zinc-800">
+            <div class="reveal flex items-start gap-4 py-5">
+                <div class="text-rose-400 text-lg w-6 text-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-mask"></i></div>
+                <div><h3 class="text-sm font-semibold text-white">Spoofing detection</h3><p class="text-sm text-zinc-400 leading-relaxed mt-1">Flags senders impersonating brands you trust, even when the display name looks right.</p></div>
             </div>
-            <div class="reveal lift bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5" style="transition-delay:.1s">
-                <div class="text-amber-400 mb-2"><i class="fa-solid fa-link"></i></div>
-                <h3 class="text-sm font-semibold text-white mb-1">Link sandboxing</h3>
-                <p class="text-xs text-zinc-400 leading-relaxed">Flags risky URLs before you click them.</p>
+            <div class="reveal flex items-start gap-4 py-5" style="transition-delay:.06s">
+                <div class="text-amber-400 text-lg w-6 text-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-link"></i></div>
+                <div><h3 class="text-sm font-semibold text-white">Link inspection</h3><p class="text-sm text-zinc-400 leading-relaxed mt-1">Reads every URL and flags the ones dressed up to look like a site you recognize.</p></div>
             </div>
-            <div class="reveal lift bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5" style="transition-delay:.2s">
-                <div class="text-purple-400 mb-2"><i class="fa-solid fa-graduation-cap"></i></div>
-                <h3 class="text-sm font-semibold text-white mb-1">Learn as you go</h3>
-                <p class="text-xs text-zinc-400 leading-relaxed">AI quizzes teach you to spot scams yourself.</p>
+            <div class="reveal flex items-start gap-4 py-5" style="transition-delay:.12s">
+                <div class="text-purple-400 text-lg w-6 text-center flex-shrink-0 mt-0.5"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div><h3 class="text-sm font-semibold text-white">Learn as you go</h3><p class="text-sm text-zinc-400 leading-relaxed mt-1">Short quizzes turn each catch into a lesson, so you spot the next one on your own.</p></div>
             </div>
         </div>
     </div>
 
-    <div class="mt-24 max-w-3xl w-full">
-        <p class="reveal text-[11px] font-mono uppercase tracking-[.2em] text-blue-400">How it works</p>
-        <h2 class="reveal font-display text-xl font-bold text-white tracking-tight mt-2" style="transition-delay:.05s">Up and running in a minute</h2>
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-            <div class="reveal lift relative bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5">
-                <span class="text-[11px] font-mono text-blue-400 font-semibold">01</span>
-                <h3 class="text-sm font-semibold text-white mt-2 mb-1">Sign in with Google</h3>
-                <p class="text-xs text-zinc-400 leading-relaxed">Read-only access — GuardMail can never send, delete, or change your mail.</p>
+    <div class="mt-24 max-w-5xl w-full grid lg:grid-cols-5 gap-8 lg:gap-14 text-left">
+        <div class="lg:col-span-2">
+            <p class="reveal eyebrow">How it works</p>
+            <h2 class="reveal font-display text-2xl sm:text-3xl font-semibold text-white mt-3" style="transition-delay:.05s">Up and running in a minute</h2>
+            <p class="reveal text-sm text-zinc-500 mt-3 leading-relaxed" style="transition-delay:.1s">No setup and no config. Sign in, and GuardMail starts reading the room.</p>
+            <a href="/how-it-works" class="reveal group inline-flex items-center gap-1.5 mt-4 text-xs font-medium u-accent hover:text-white transition" style="transition-delay:.15s">See exactly what we check <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition-transform"></i></a>
+        </div>
+        <div class="lg:col-span-3 space-y-3">
+            <div class="reveal lift bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 flex items-start gap-4">
+                <span class="font-display text-3xl text-zinc-700 leading-none">01</span>
+                <div><h3 class="text-sm font-semibold text-white">Sign in with Google</h3><p class="text-sm text-zinc-400 leading-relaxed mt-1">Read-only access. GuardMail can never send, delete, or change your mail.</p></div>
             </div>
-            <div class="reveal lift relative bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5" style="transition-delay:.1s">
-                <span class="text-[11px] font-mono text-blue-400 font-semibold">02</span>
-                <h3 class="text-sm font-semibold text-white mt-2 mb-1">We scan and score</h3>
-                <p class="text-xs text-zinc-400 leading-relaxed">Every message gets a 0&ndash;100 risk score from spoofing checks, link analysis, and AI classification.</p>
+            <div class="reveal lift bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 flex items-start gap-4" style="transition-delay:.08s">
+                <span class="font-display text-3xl text-zinc-700 leading-none">02</span>
+                <div><h3 class="text-sm font-semibold text-white">We scan and score</h3><p class="text-sm text-zinc-400 leading-relaxed mt-1">Every message gets a 0 to 100 risk score from spoofing checks, link analysis, and AI classification.</p></div>
             </div>
-            <div class="reveal lift relative bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5" style="transition-delay:.2s">
-                <span class="text-[11px] font-mono text-blue-400 font-semibold">03</span>
-                <h3 class="text-sm font-semibold text-white mt-2 mb-1">You learn the signs</h3>
-                <p class="text-xs text-zinc-400 leading-relaxed">Plain-English threat reports and quick quizzes train you to spot the next scam yourself.</p>
+            <div class="reveal lift bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 flex items-start gap-4" style="transition-delay:.16s">
+                <span class="font-display text-3xl text-zinc-700 leading-none">03</span>
+                <div><h3 class="text-sm font-semibold text-white">You learn the signs</h3><p class="text-sm text-zinc-400 leading-relaxed mt-1">Plain-English threat reports and quick quizzes train you to spot the next scam yourself.</p></div>
             </div>
         </div>
-        <a href="/how-it-works" class="reveal inline-block mt-4 text-xs font-medium text-blue-400 hover:text-blue-300 transition" style="transition-delay:.25s">See exactly what we check &rarr;</a>
     </div>
 
-    <div class="reveal mt-24 max-w-3xl w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-left sm:flex items-start gap-6">
+    <div class="reveal mt-24 max-w-5xl w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-left sm:flex items-start gap-6">
         <div class="text-emerald-400 text-2xl mb-4 sm:mb-0"><i class="fa-solid fa-lock"></i></div>
         <div>
-            <p class="text-[11px] font-mono uppercase tracking-[.2em] text-emerald-400">Privacy</p>
-            <h2 class="font-display text-lg font-bold text-white tracking-tight mt-2">Your inbox stays yours</h2>
-            <ul class="mt-3 space-y-2 text-sm text-zinc-400 leading-relaxed">
-                <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Read-only Gmail access — we can't send, delete, or modify anything.</li>
+            <p class="eyebrow">Privacy</p>
+            <h2 class="font-display text-xl sm:text-2xl font-semibold text-white mt-2">Your inbox stays yours</h2>
+            <ul class="mt-4 space-y-2 text-sm text-zinc-400 leading-relaxed max-w-2xl">
+                <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Read-only Gmail access, so we can't send, delete, or modify anything.</li>
                 <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>We don't store your emails. Messages are analyzed on demand and discarded.</li>
                 <li><i class="fa-solid fa-check text-emerald-400 mr-2"></i>Revoke access anytime from your Google Account settings.</li>
             </ul>
-            <a href="/privacy" class="inline-block mt-4 text-xs font-medium text-blue-400 hover:text-blue-300 transition">Read the privacy policy &rarr;</a>
+            <a href="/privacy" class="group inline-flex items-center gap-1.5 mt-4 text-xs font-medium u-accent hover:text-white transition">Read the privacy policy <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-0.5 transition-transform"></i></a>
         </div>
     </div>
 
     <div class="mt-24 max-w-2xl w-full text-left">
-        <p class="reveal text-[11px] font-mono uppercase tracking-[.2em] text-blue-400 text-center">FAQ</p>
-        <h2 class="reveal font-display text-xl font-bold text-white tracking-tight mt-2 text-center" style="transition-delay:.05s">Fair questions</h2>
+        <p class="reveal eyebrow eyebrow-c">FAQ</p>
+        <h2 class="reveal font-display text-2xl sm:text-3xl font-semibold text-white mt-2 text-center" style="transition-delay:.05s">Fair questions</h2>
         <div class="mt-6 space-y-3">
             <details class="reveal group bg-zinc-900 border border-zinc-800 rounded-xl">
                 <summary class="flex items-center justify-between px-5 py-4 text-sm font-medium text-zinc-200 cursor-pointer list-none hover:text-white transition">
                     <span>Can GuardMail read, send, or delete my email?</span>
                     <i class="fa-solid fa-plus text-xs text-zinc-500 group-open:rotate-45 transition-transform"></i>
                 </summary>
-                <p class="px-5 pb-4 text-sm text-zinc-400 leading-relaxed">It can only read. We request Gmail's read-only scope, which makes sending, deleting, or modifying anything technically impossible — Google enforces it, not just us.</p>
+                <p class="px-5 pb-4 text-sm text-zinc-400 leading-relaxed">It can only read. We request Gmail's read-only scope, which makes sending, deleting, or modifying anything technically impossible. Google enforces that, not just us.</p>
             </details>
             <details class="reveal group bg-zinc-900 border border-zinc-800 rounded-xl" style="transition-delay:.06s">
                 <summary class="flex items-center justify-between px-5 py-4 text-sm font-medium text-zinc-200 cursor-pointer list-none hover:text-white transition">
@@ -240,21 +245,21 @@
                     <span>What does it cost?</span>
                     <i class="fa-solid fa-plus text-xs text-zinc-500 group-open:rotate-45 transition-transform"></i>
                 </summary>
-                <p class="px-5 pb-4 text-sm text-zinc-400 leading-relaxed">Nothing while we're in beta. No credit card, no trial countdown — and the demo doesn't even need an account.</p>
+                <p class="px-5 pb-4 text-sm text-zinc-400 leading-relaxed">Nothing while we're in beta. No credit card, no trial countdown, and the demo doesn't even need an account.</p>
             </details>
         </div>
     </div>
 
-    <div class="reveal mt-24 mb-4">
-        <h2 class="font-display text-2xl font-bold text-white tracking-tight">Stop guessing which emails are safe.</h2>
-        <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="/login" class="press inline-flex items-center space-x-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl cursor-pointer">
+    <div class="reveal mt-24 mb-6">
+        <h2 class="font-display text-3xl sm:text-4xl font-semibold text-white">Stop guessing which<br>emails are <span class="mark">safe</span>.</h2>
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="/login" class="press inline-flex items-center space-x-3 btn-primary font-semibold py-3 px-6 rounded-xl cursor-pointer shadow-lg shadow-black/40">
                 <i class="fa-brands fa-google"></i>
                 <span>Sign in with Google</span>
             </a>
             <a href="/demo" class="text-sm font-medium text-zinc-400 hover:text-white transition">or try the demo first &rarr;</a>
         </div>
-        <p class="mt-3 text-xs text-zinc-500">Free while in beta &middot; No credit card required</p>
+        <p class="mt-4 text-xs text-zinc-500">Free while in beta &middot; No credit card required</p>
     </div>
 </main>
 {% else %}
@@ -263,7 +268,7 @@
 
     <!-- Sidebar: category views with live counts, inbox health, shortcuts -->
     <aside class="hidden lg:flex w-60 flex-shrink-0 flex-col gap-5 sticky top-24">
-        <button onclick="refreshInbox()" class="press w-full flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-3 rounded-2xl cursor-pointer">
+        <button onclick="refreshInbox()" class="press w-full flex items-center justify-center gap-2.5 btn-primary text-sm font-semibold py-3 rounded-2xl cursor-pointer">
             <i class="fa-solid fa-arrow-rotate-right"></i><span>Rescan inbox</span>
         </button>
 
@@ -301,7 +306,7 @@
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
             <p class="text-[11px] uppercase tracking-wide text-zinc-500 font-medium">Inbox health</p>
             <div class="mt-2 flex items-center gap-3">
-                <span id="health-grade" class="font-display text-3xl font-bold text-zinc-500">&mdash;</span>
+                <span id="health-grade" class="font-display text-3xl font-bold text-zinc-500">·</span>
                 <p id="health-note" class="text-xs text-zinc-500 leading-snug">Scanning your mail...</p>
             </div>
         </div>
@@ -314,8 +319,8 @@
     <div class="flex-1 min-w-0 space-y-4">
 
         {% if demo_mode %}
-        <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl px-4 py-3 text-sm text-blue-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span><i class="fa-solid fa-flask mr-2 text-blue-400"></i>You're browsing a sample inbox — everything here works, but the mail is made up.</span>
+        <div class="note-accent rounded-xl px-4 py-3 text-sm u-accent flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span><i class="fa-solid fa-flask mr-2 u-accent"></i>You're browsing a sample inbox. Everything here works, but the mail is made up.</span>
             <a href="/login" class="font-semibold text-white whitespace-nowrap hover:underline">Connect your Gmail &rarr;</a>
         </div>
         {% endif %}
@@ -338,15 +343,15 @@
 
         <!-- Compact scan summary -->
         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 px-1">
-            <span><span id="stat-total" class="font-mono text-zinc-300">&mdash;</span> scanned</span>
-            <span><i class="fa-solid fa-mask text-rose-400 mr-1"></i><span id="stat-spoofed" class="font-mono text-rose-400">&mdash;</span> spoofed</span>
-            <span><i class="fa-solid fa-flag text-amber-400 mr-1"></i><span id="stat-reported" class="font-mono text-amber-400">&mdash;</span> reported</span>
-            <span><span id="stat-percentage" class="font-mono text-zinc-300">&mdash;</span> scam rate</span>
+            <span><span id="stat-total" class="font-mono text-zinc-300">·</span> scanned</span>
+            <span><i class="fa-solid fa-mask text-rose-400 mr-1"></i><span id="stat-spoofed" class="font-mono text-rose-400">·</span> spoofed</span>
+            <span><i class="fa-solid fa-flag text-amber-400 mr-1"></i><span id="stat-reported" class="font-mono text-amber-400">·</span> reported</span>
+            <span><span id="stat-percentage" class="font-mono text-zinc-300">·</span> scam rate</span>
         </div>
 
         <!-- Category chips: mobile only (the sidebar covers desktop) -->
         <div id="category-filter-tags" class="lg:hidden flex items-center gap-1.5 flex-wrap">
-            <button onclick="setCategoryFilter('All')" data-filter="All" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-blue-600 text-white border-blue-600">All</button>
+            <button onclick="setCategoryFilter('All')" data-filter="All" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition chip-on">All</button>
             <button onclick="setCategoryFilter('Scam Alert')" data-filter="Scam Alert" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-200">Scam Alert</button>
             <button onclick="setCategoryFilter('Suspicious')" data-filter="Suspicious" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-200">Suspicious</button>
             <button onclick="setCategoryFilter('Spam')" data-filter="Spam" class="filter-chip text-[11px] font-medium px-2.5 py-1 rounded-full border transition bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-200">Spam</button>
@@ -393,7 +398,7 @@
             <div id="ai-pane" class="hidden bg-zinc-900 border border-zinc-800 rounded-xl p-6 transition duration-200">
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center space-x-2 text-zinc-200 font-semibold text-sm">
-                        <i class="fa-solid fa-magnifying-glass-chart text-blue-400"></i>
+                        <i class="fa-solid fa-magnifying-glass-chart u-accent"></i>
                         <span>AI Analysis</span>
                     </div>
                     <button id="ai-copy-btn" onclick="copyAiReport()" class="hidden text-xs text-zinc-400 hover:text-white bg-zinc-800 border border-zinc-700 px-2.5 py-1 rounded-lg transition cursor-pointer">
@@ -402,7 +407,7 @@
                 </div>
 
                 <div id="ai-loading" class="py-8 text-center text-zinc-500 space-y-2">
-                    <i class="fa-solid fa-circle-notch text-xl text-blue-400 animate-spin"></i>
+                    <i class="fa-solid fa-circle-notch text-xl u-accent animate-spin"></i>
                     <p class="text-xs">Analyzing this message...</p>
                 </div>
 
@@ -432,7 +437,7 @@
                 <div id="ai-error" class="hidden py-6 text-center text-zinc-500 space-y-2">
                     <i class="fa-solid fa-triangle-exclamation text-xl text-amber-400"></i>
                     <p class="text-xs" id="ai-error-text">Couldn't complete analysis. Please try again.</p>
-                    <button id="ai-retry-btn" class="text-xs font-medium text-blue-400 underline">Try again</button>
+                    <button id="ai-retry-btn" class="text-xs font-medium u-accent underline">Try again</button>
                 </div>
             </div>
 
@@ -454,7 +459,7 @@
                 </div>
                 <div id="quiz-error" class="hidden py-4 text-center text-zinc-500 space-y-2">
                     <p class="text-xs">Couldn't load the quiz right now.</p>
-                    <button id="quiz-retry-btn" class="text-xs font-medium text-blue-400 underline">Try again</button>
+                    <button id="quiz-retry-btn" class="text-xs font-medium u-accent underline">Try again</button>
                 </div>
             </div>
 
@@ -465,9 +470,9 @@
     <!-- Keyboard shortcuts overlay -->
     <div id="shortcuts-modal" class="hidden fixed inset-0 z-[70] items-center justify-center p-4" onclick="toggleShortcutsModal()">
         <div class="absolute inset-0 bg-black/60"></div>
-        <div class="relative bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm anim-fade-up" onclick="event.stopPropagation()">
+        <div data-modal-panel class="relative bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm anim-fade-up" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="font-display text-sm font-bold text-white">Keyboard shortcuts</h3>
+                <h3 class="font-display text-base font-semibold text-white">Keyboard shortcuts</h3>
                 <button onclick="toggleShortcutsModal()" class="text-zinc-500 hover:text-white transition cursor-pointer" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <dl class="space-y-2.5 text-sm">
@@ -648,7 +653,7 @@
                     </div>
                     <p class="text-xs text-zinc-500 truncate mt-0.5">
                         <span class="card-subject ${viewed ? 'text-zinc-500' : 'text-zinc-300 font-medium'}">${cleanSubject}</span>
-                        <span> &mdash; ${cleanSnippet}</span>
+                        <span> · ${cleanSnippet}</span>
                     </p>
                 </div>
                 <span class="flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge}">${label}</span>
@@ -700,9 +705,7 @@
         // Mobile chips
         document.querySelectorAll('#category-filter-tags button').forEach(btn => {
             const isActive = btn.dataset.filter === label;
-            btn.classList.toggle('bg-blue-600', isActive);
-            btn.classList.toggle('text-white', isActive);
-            btn.classList.toggle('border-blue-600', isActive);
+            btn.classList.toggle('chip-on', isActive);
             btn.classList.toggle('bg-zinc-800', !isActive);
             btn.classList.toggle('text-zinc-400', !isActive);
             btn.classList.toggle('border-zinc-700', !isActive);
@@ -787,9 +790,9 @@
         if (!gradeEl || !noteEl) return;
         let grade, color, note;
         const p = analytics.percentage;
-        if (analytics.total === 0) { grade = '—'; color = 'text-zinc-500'; note = 'Nothing scanned yet.'; }
+        if (analytics.total === 0) { grade = '·'; color = 'text-zinc-500'; note = 'Nothing scanned yet.'; }
         else if (p === 0) { grade = 'A'; color = 'text-emerald-400'; note = 'No scams detected. Clean inbox.'; }
-        else if (p < 15) { grade = 'B'; color = 'text-emerald-400'; note = 'A few threats caught — stay sharp.'; }
+        else if (p < 15) { grade = 'B'; color = 'text-emerald-400'; note = 'A few threats caught. Stay sharp.'; }
         else if (p < 30) { grade = 'C'; color = 'text-amber-400'; note = 'Several threats in your recent mail.'; }
         else if (p < 50) { grade = 'D'; color = 'text-amber-400'; note = 'A lot of scams are targeting you.'; }
         else { grade = 'F'; color = 'text-rose-400'; note = 'Your inbox is under heavy fire.'; }
@@ -838,9 +841,10 @@
             <p class="text-sm max-w-sm leading-relaxed">Select a message from the inbox to view its contents and safety details.</p>
             <p class="text-xs mt-2 text-zinc-600">Tip: use <span class="font-mono text-zinc-500">j</span>/<span class="font-mono text-zinc-500">k</span> to move through messages, <span class="font-mono text-zinc-500">/</span> to search.</p>
         `;
-        document.getElementById('sandbox-pane').classList.add('hidden');
-        document.getElementById('ai-pane').classList.add('hidden');
-        document.getElementById('quiz-pane').classList.add('hidden');
+        retriggerAnim(viewerPane);
+        gmHide(document.getElementById('sandbox-pane'));
+        gmHide(document.getElementById('ai-pane'));
+        gmHide(document.getElementById('quiz-pane'));
     }
 
     // Refreshes in place (no full page reload): clears the cache and refetches.
@@ -1034,7 +1038,7 @@
                         </button>
                         ` : ''}
                         <button id="soc-btn-${email.id}" onclick="dispatchSocReport('${email.id}')"
-                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition cursor-pointer ${email.soc_reported ? 'opacity-60 pointer-events-none border-zinc-700 text-zinc-500 bg-zinc-800' : ''}">
+                                class="px-3 py-1.5 text-xs font-semibold rounded-lg chip-accent transition cursor-pointer ${email.soc_reported ? 'opacity-60 pointer-events-none border-zinc-700 text-zinc-500 bg-zinc-800' : ''}">
                             <i class="fa-solid fa-flag mr-1.5"></i>${email.soc_reported ? 'Reported' : 'Report this email'}
                         </button>
                     </div>
@@ -1072,8 +1076,7 @@
         const sandboxLinksList = document.getElementById('sandbox-links-list');
 
         if (email.links && email.links.length > 0) {
-            sandboxPane.classList.remove('hidden');
-            retriggerAnim(sandboxPane);
+            gmShow(sandboxPane);
             sandboxLinksList.innerHTML = email.links.map(l => {
                 const cleanUrl = l.url.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 const style = linkStatusStyle(l.safety_status);
@@ -1086,7 +1089,7 @@
                 </div>
             `}).join('');
         } else {
-            sandboxPane.classList.add('hidden');
+            gmHide(sandboxPane);
         }
 
         const aiPane = document.getElementById('ai-pane');
@@ -1095,14 +1098,14 @@
         const aiError = document.getElementById('ai-error');
         const quizPane = document.getElementById('quiz-pane');
 
-        quizPane.classList.add('hidden');
+        gmHide(quizPane);
 
         // Skip the AI deep-dive for senders the user explicitly trusts.
         if (score >= 40 && !trusted) {
             runAiAnalysis(email);
             document.getElementById('ai-retry-btn').onclick = () => runAiAnalysis(email);
         } else {
-            aiPane.classList.add('hidden');
+            gmHide(aiPane);
         }
     }
 
@@ -1142,13 +1145,13 @@
         const text = `GuardMail analysis\nThreat type: ${threatType}\nWarning signs:\n${indicators}\nSummary: ${summary}`;
         navigator.clipboard.writeText(text)
             .then(() => showToast('Report copied to clipboard'))
-            .catch(() => showToast("Couldn't copy — your browser blocked clipboard access"));
+            .catch(() => showToast("Couldn't copy. Your browser blocked clipboard access."));
     }
 
     function renderAiResult(report) {
-        document.getElementById('ai-loading').classList.add('hidden');
-        document.getElementById('ai-content').classList.remove('hidden');
-        document.getElementById('ai-copy-btn').classList.remove('hidden');
+        gmHide(document.getElementById('ai-loading'));
+        gmShow(document.getElementById('ai-content'));
+        gmShow(document.getElementById('ai-copy-btn'));
 
         document.getElementById('ai-threat-type').innerText = report.threat_type || "Unclassified";
         document.getElementById('ai-report').innerText = report.educational_report || "No summary available.";
@@ -1176,22 +1179,18 @@
         const aiError = document.getElementById('ai-error');
         const aiErrorText = document.getElementById('ai-error-text');
 
-        if (aiPane.classList.contains('hidden')) {
-            aiPane.classList.remove('hidden');
-            retriggerAnim(aiPane);
-        }
-        aiError.classList.add('hidden');
-        document.getElementById('ai-copy-btn').classList.add('hidden');
+        gmShow(aiPane);
+        gmHide(aiError);
+        gmHide(document.getElementById('ai-copy-btn'));
 
         if (aiResultsCache.has(email.id)) {
-            aiLoading.classList.add('hidden');
             renderAiResult(aiResultsCache.get(email.id));
             triggerQuizModule(email);
             return;
         }
 
-        aiLoading.classList.remove('hidden');
-        aiContent.classList.add('hidden');
+        gmShow(aiLoading);
+        gmHide(aiContent);
 
         fetch(`/analyze/${email.id}`, {
             method: 'POST',
@@ -1209,9 +1208,9 @@
             triggerQuizModule(email);
         })
         .catch(err => {
-            aiLoading.classList.add('hidden');
-            aiContent.classList.add('hidden');
-            aiError.classList.remove('hidden');
+            gmHide(aiLoading);
+            gmHide(aiContent);
+            gmShow(aiError);
             aiErrorText.innerText = "Couldn't complete analysis (" + err.message + "). Please try again.";
         });
     }
@@ -1296,14 +1295,14 @@
                 email.soc_reported = true;
                 updateAnalytics();
                 saveInboxCache();
-                showToast('Reported — it will show up under Reported Cases');
+                showToast('Reported. It will show up under Reported Cases.');
             } else {
                 throw new Error(data.message || 'Unexpected response');
             }
         })
         .catch(() => {
             if (errorBox) errorBox.classList.remove('hidden');
-            else showToast("Couldn't send the report — please try again");
+            else showToast("Couldn't send the report. Please try again.");
         });
     }
 
@@ -1334,14 +1333,31 @@
 
     function toggleShortcutsModal() {
         const modal = document.getElementById('shortcuts-modal');
-        modal.classList.toggle('hidden');
-        modal.classList.toggle('flex');
+        const opening = modal.classList.contains('hidden');
+        const panel = modal.querySelector('[data-modal-panel]');
+        if (opening) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            if (animationsEnabled()) {
+                modal.style.opacity = '0';
+                retriggerAnim(panel);
+                requestAnimationFrame(() => { modal.style.transition = 'opacity .2s var(--ease)'; modal.style.opacity = '1'; });
+            }
+        } else {
+            if (animationsEnabled()) {
+                modal.style.opacity = '0';
+                setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); modal.style.opacity = ''; }, 200);
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
     }
 
     function renderQuizContent(quiz) {
-        document.getElementById('quiz-loading').classList.add('hidden');
-        document.getElementById('quiz-content').classList.remove('hidden');
-        document.getElementById('quiz-feedback').classList.add('hidden');
+        gmHide(document.getElementById('quiz-loading'));
+        gmShow(document.getElementById('quiz-content'));
+        gmHide(document.getElementById('quiz-feedback'));
 
         activeQuizData = quiz;
         document.getElementById('quiz-question-text').innerText = activeQuizData.question;
@@ -1367,23 +1383,19 @@
         const quizFeedback = document.getElementById('quiz-feedback');
         const quizError = document.getElementById('quiz-error');
 
-        if (quizPane.classList.contains('hidden')) {
-            quizPane.classList.remove('hidden');
-            retriggerAnim(quizPane);
-        }
-        quizFeedback.classList.add('hidden');
-        quizError.classList.add('hidden');
+        gmShow(quizPane);
+        gmHide(quizFeedback);
+        gmHide(quizError);
 
         document.getElementById('quiz-retry-btn').onclick = () => triggerQuizModule(email);
 
         if (quizResultsCache.has(email.id)) {
-            quizLoading.classList.add('hidden');
             renderQuizContent(quizResultsCache.get(email.id));
             return;
         }
 
-        quizLoading.classList.remove('hidden');
-        quizContent.classList.add('hidden');
+        gmShow(quizLoading);
+        gmHide(quizContent);
 
         fetch(`/api/quiz/${email.id}`, {
             method: 'POST',
@@ -1399,8 +1411,8 @@
             renderQuizContent(data.quiz);
         })
         .catch(() => {
-            quizLoading.classList.add('hidden');
-            quizError.classList.remove('hidden');
+            gmHide(quizLoading);
+            gmShow(quizError);
         });
     }
 
@@ -1421,12 +1433,12 @@
         feedback.textContent = '';
         const lead = document.createElement('strong');
         if (wasCorrect) {
-            clickedButton.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold";
-            feedback.className = "text-xs p-3.5 rounded-lg border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 leading-relaxed";
+            clickedButton.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold transition";
+            feedback.className = "anim-fade-up text-xs p-3.5 rounded-lg border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 leading-relaxed";
             lead.innerHTML = '<i class="fa-solid fa-circle-check mr-1.5"></i>Correct: ';
         } else {
-            clickedButton.className = "w-full text-left bg-rose-500/10 border border-rose-500/40 text-rose-400 p-2.5 rounded-lg text-xs font-semibold";
-            feedback.className = "text-xs p-3.5 rounded-lg border bg-rose-500/10 border-rose-500/30 text-rose-400 leading-relaxed";
+            clickedButton.className = "w-full text-left bg-rose-500/10 border border-rose-500/40 text-rose-400 p-2.5 rounded-lg text-xs font-semibold transition";
+            feedback.className = "anim-fade-up text-xs p-3.5 rounded-lg border bg-rose-500/10 border-rose-500/30 text-rose-400 leading-relaxed";
             const correctBtn = optionsBox.children[activeQuizData.correct_index];
             if (correctBtn) correctBtn.className = "w-full text-left bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-2.5 rounded-lg text-xs font-semibold";
             lead.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1.5"></i>Not quite: ';
@@ -1503,13 +1515,13 @@
             if (isPhish) {
                 card.classList.remove('border-zinc-800', 'hover:border-zinc-600');
                 card.classList.add('border-rose-500/60');
-                verdict.className = 'game-verdict mt-3 text-xs font-medium text-rose-400';
-                verdict.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Scam — "spotify-account-services.net" isn\'t Spotify, and the 24-hour deadline is a pressure tactic.';
+                verdict.className = 'game-verdict anim-fade-up mt-3 text-xs font-medium text-rose-400';
+                verdict.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1.5"></i>Scam. "spotify-account-services.net" isn\'t Spotify, and the 24-hour deadline is a pressure tactic.';
             } else {
                 card.classList.remove('border-zinc-800', 'hover:border-zinc-600');
                 card.classList.add('border-emerald-500/60');
-                verdict.className = 'game-verdict mt-3 text-xs font-medium text-emerald-400';
-                verdict.innerHTML = '<i class="fa-solid fa-circle-check mr-1.5"></i>Legit — sent from the real spotify.com, no urgency, no link to click.';
+                verdict.className = 'game-verdict anim-fade-up mt-3 text-xs font-medium text-emerald-400';
+                verdict.innerHTML = '<i class="fa-solid fa-circle-check mr-1.5"></i>Legit. Sent from the real spotify.com, no urgency, no link to click.';
             }
             card.style.cursor = 'default';
         });
@@ -1518,10 +1530,10 @@
         feedback.classList.remove('hidden');
         if (pickedThePhish) {
             feedback.className = 'mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300 text-left anim-fade-up';
-            feedback.innerHTML = '<strong>Nice catch.</strong> You spotted the lookalike domain. GuardMail checks every sender against the brand\'s real domains automatically — <a href="/demo" class="underline font-semibold">see it work on a full inbox &rarr;</a>';
+            feedback.innerHTML = '<strong>Nice catch.</strong> You spotted the lookalike domain. GuardMail checks every sender against the brand\'s real domains automatically. <a href="/demo" class="underline font-semibold">See it work on a full inbox &rarr;</a>';
         } else {
             feedback.className = 'mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 text-left anim-fade-up';
-            feedback.innerHTML = '<strong>It got you</strong> — and that\'s the point: good fakes are hard to spot. GuardMail flags the lookalike domain in milliseconds — <a href="/demo" class="underline font-semibold">try it on a full inbox &rarr;</a>';
+            feedback.innerHTML = '<strong>It got you,</strong> and that\'s the point: good fakes are hard to spot. GuardMail flags the lookalike domain in milliseconds. <a href="/demo" class="underline font-semibold">Try it on a full inbox &rarr;</a>';
         }
     }
 </script>

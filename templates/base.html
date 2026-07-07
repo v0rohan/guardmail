@@ -8,66 +8,115 @@
     <meta property="og:title" content="GuardMail AI - Email Security Dashboard">
     <meta property="og:description" content="Scan your inbox for phishing, spam, and spoofed senders, and learn to recognize the warning signs.">
     <meta property="og:type" content="website">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%9B%A1%EF%B8%8F</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23ece3d0%22 d=%22M12 2 4 5v6c0 5 3.5 8.6 8 11 4.5-2.4 8-6 8-11V5z%22/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif; }
-        .font-display { font-family: 'Space Grotesk', 'Inter', ui-sans-serif, sans-serif; }
+        :root {
+            --ease: cubic-bezier(.22, 1, .36, 1);
+            /* Warm cream / near-mono accent. Change these three and the whole
+               brand recolors; semantic red/amber/green live in Tailwind. */
+            --accent: #ece3d0;        /* warm cream: fills, highlights, labels */
+            --accent-hi: #f8f3ea;     /* brighter cream: hover */
+            --accent-ink: #12100c;    /* near-black text placed on cream fills */
+            --accent-dim: #a49c8a;    /* muted cream for secondary text */
+        }
+        body {
+            font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
+            /* Faint film grain: gives the flat dark areas some tooth instead of a
+               dead-flat "template" background. Baked into the page bg so it never
+               interferes with layering or interaction. */
+            background-color: #0a0a0b;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
+        }
+        .font-display { font-family: 'Fraunces', ui-serif, Georgia, serif; font-optical-sizing: auto; letter-spacing: -0.01em; }
         .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #09090b; }
+        .u-accent { color: var(--accent); }
+
+        /* Highlighter mark: a soft cream swatch fully behind the word (not a
+           partial gradient split - Fraunces' tall ascenders on letters like "f"
+           sat right at the gradient's cutoff line and looked clipped/warped). */
+        .mark { background: rgba(236,227,208,.16); border-radius: .3em; padding: .04em .22em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+
+        /* Reusable components (single source of truth for the accent). */
+        .btn-primary { background: var(--accent); color: var(--accent-ink); }
+        .btn-primary:hover { background: var(--accent-hi); }
+        .chip-accent { background: rgba(236,227,208,.07); color: var(--accent); border: 1px solid rgba(236,227,208,.22); }
+        .chip-accent:hover { background: rgba(236,227,208,.15); color: #fff; }
+        .chip-on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+        .note-accent { background: rgba(236,227,208,.06); border: 1px solid rgba(236,227,208,.20); }
+        ::selection { background: rgba(236,227,208,.24); color: #fff; }
+        /* A small section eyebrow: a short cream rule plus a clean label. */
+        .eyebrow { display: inline-flex; align-items: center; gap: .6rem; color: var(--accent); font-size: .8rem; font-weight: 600; letter-spacing: .01em; }
+        .eyebrow::before { content: ""; width: 1.6rem; height: 1px; background: rgba(236,227,208,.5); }
+        .eyebrow-c { justify-content: center; }
+
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #52525b; }
 
         /* ---- Motion system ----
-           Entrance animations + scroll reveals. Everything routes through these
-           classes so one switch (html.no-anim, set from the Settings toggle or
-           prefers-reduced-motion) can disable all of it. */
+           Every animated thing routes through these classes so a single switch
+           (html.no-anim) disables all of it. The class is set in the pre-paint
+           script below from the Settings preference, falling back to the OS
+           reduced-motion setting only when the user hasn't chosen. The Settings
+           toggle is therefore always authoritative. */
         @keyframes gm-fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         @keyframes gm-pop { 0% { opacity: 0; transform: scale(.6); } 70% { transform: scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
-        .anim-fade-up { opacity: 0; animation: gm-fade-up .55s cubic-bezier(.22,1,.36,1) forwards; }
-        .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1); }
+        .anim-fade-up { opacity: 0; animation: gm-fade-up .6s var(--ease) forwards; }
+        .reveal { opacity: 0; transform: translateY(20px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
         .reveal.revealed { opacity: 1; transform: none; }
-        .revealed .mock-pop { animation: gm-pop .45s cubic-bezier(.22,1,.36,1) both; }
-        .lift { transition: transform .2s cubic-bezier(.22,1,.36,1), border-color .2s; }
-        .lift:hover { transform: translateY(-3px); }
-        @keyframes gm-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .marquee-track { animation: gm-marquee 36s linear infinite; }
+        .revealed .mock-pop { animation: gm-pop .45s var(--ease) both; }
+        .lift { transition: transform .25s var(--ease), border-color .25s, box-shadow .25s; }
+        .lift:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -24px rgba(0,0,0,.9); }
+        /* GPU-composited marquee: translate3d + will-change keeps it off the main
+           thread so it doesn't stutter or hitch. */
+        @keyframes gm-marquee { from { transform: translate3d(0,0,0); } to { transform: translate3d(-50%,0,0); } }
+        .marquee-track { animation: gm-marquee 60s linear infinite; will-change: transform; backface-visibility: hidden; }
         .marquee-track:hover { animation-play-state: paused; }
-        html.no-anim .marquee-track { animation: none; }
-        button:active, a.press:active { transform: scale(.97); }
-        button, a.press { transition: transform .12s ease, background-color .15s, color .15s, border-color .15s; }
+        .marquee-item { margin-right: 2.5rem; }
+        button:active, a.press:active { transform: scale(.975); }
+        button, a.press { transition: transform .14s ease, background-color .18s, color .18s, border-color .18s, box-shadow .18s; }
+
+        /* Fluid show/hide: a .gm-collapsed element is faded + nudged out but still
+           laid out; JS adds `hidden` only after the transition finishes. */
+        .gm-fade { transition: opacity .3s var(--ease), transform .3s var(--ease); }
+        .gm-collapsed { opacity: 0; transform: translateY(8px); pointer-events: none; }
 
         html.no-anim *, html.no-anim *::before, html.no-anim *::after {
             animation: none !important;
             transition: none !important;
         }
-        html.no-anim .anim-fade-up, html.no-anim .reveal { opacity: 1 !important; transform: none !important; }
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { animation: none !important; transition: none !important; }
-            .anim-fade-up, .reveal { opacity: 1 !important; transform: none !important; }
-        }
+        html.no-anim .anim-fade-up, html.no-anim .reveal, html.no-anim .gm-fade { opacity: 1 !important; transform: none !important; }
+        html.no-anim .marquee-track { animation: none !important; }
     </style>
     <script>
-        // Runs before paint so a disabled-animations preference never flashes motion.
-        try { if (localStorage.getItem('guardmail_animations') === 'off') document.documentElement.classList.add('no-anim'); } catch (e) {}
+        // Runs before paint so the choice never flashes. Settings preference wins;
+        // if the user hasn't chosen, we honour the OS reduced-motion setting.
+        try {
+            var gmPref = localStorage.getItem('guardmail_animations');
+            var gmReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (gmPref === 'off' || (gmPref === null && gmReduce)) {
+                document.documentElement.classList.add('no-anim');
+            }
+        } catch (e) {}
     </script>
     {% block head %}{% endblock %}
 </head>
-<body class="bg-zinc-950 text-zinc-300 min-h-screen flex flex-col selection:bg-blue-500/30">
+<body class="bg-zinc-950 text-zinc-300 min-h-screen flex flex-col">
 
     <header class="border-b border-zinc-800/80 {% if logged_in %}bg-zinc-900/80 backdrop-blur-md sticky top-0 z-50{% endif %} p-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-8">
-                <a href="/" class="flex items-center space-x-2.5">
-                    <div class="bg-blue-600 text-white p-2 rounded-lg">
-                        <i class="fa-solid fa-shield-halved"></i>
+                <a href="/" class="group flex items-center space-x-2.5">
+                    <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-900 border border-zinc-700 text-[var(--accent-hi)] ring-1 ring-inset ring-white/5 group-hover:border-[var(--accent)] transition">
+                        <i class="fa-solid fa-shield-halved text-sm"></i>
                     </div>
-                    <span class="font-display font-bold text-lg tracking-tight text-white">GuardMail</span>
+                    <span class="font-display font-semibold text-xl tracking-tight text-white">GuardMail</span>
                 </a>
                 {% if logged_in %}
                 <nav class="hidden sm:flex items-center space-x-1">
@@ -84,7 +133,7 @@
                 <span class="hidden sm:inline-flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs text-amber-400 font-medium">
                     <i class="fa-solid fa-flask"></i><span>Demo</span>
                 </span>
-                <a href="/login" class="hidden sm:inline-block whitespace-nowrap text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-lg transition">
+                <a href="/login" class="hidden sm:inline-block whitespace-nowrap text-xs font-semibold btn-primary px-3 py-1.5 rounded-lg transition">
                     <i class="fa-brands fa-google mr-1.5"></i>Connect Gmail
                 </a>
                 <a href="/logout" class="whitespace-nowrap text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-800 border border-zinc-700 px-3 py-1.5 rounded-lg transition">
@@ -98,7 +147,7 @@
                 {% else %}
                 <a href="/how-it-works" class="hidden sm:inline text-sm font-medium text-zinc-400 hover:text-white transition">How It Works</a>
                 <span class="hidden sm:inline text-[11px] font-mono text-zinc-500 border border-zinc-800 rounded px-2 py-1">BETA</span>
-                <a href="/login" class="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg transition">Sign in</a>
+                <a href="/login" class="text-sm font-semibold btn-primary px-4 py-1.5 rounded-lg transition">Sign in</a>
                 {% endif %}
             </div>
         </div>
@@ -116,38 +165,81 @@
 
     <div id="toast-root" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] space-y-2 pointer-events-none w-full max-w-sm px-4"></div>
     <script>
+        // Single source of truth: motion is on unless the <html> element carries
+        // no-anim (set pre-paint from the Settings preference / OS default).
+        function animationsEnabled() {
+            return !document.documentElement.classList.contains('no-anim');
+        }
+
         // Small shared toast helper: showToast('Saved', { actionLabel: 'Undo', onAction: fn })
         function showToast(message, opts = {}) {
             const root = document.getElementById('toast-root');
             const el = document.createElement('div');
-            el.className = 'anim-fade-up pointer-events-auto flex items-center justify-between gap-4 bg-zinc-800 border border-zinc-700 text-zinc-200 text-sm rounded-xl px-4 py-3 shadow-xl shadow-black/40 transition-opacity duration-300';
+            el.className = 'anim-fade-up pointer-events-auto flex items-center justify-between gap-4 bg-zinc-800/95 backdrop-blur border border-zinc-700 text-zinc-100 text-sm rounded-xl px-4 py-3 shadow-xl shadow-black/50 transition-opacity duration-300';
             const span = document.createElement('span');
             span.textContent = message;
             el.appendChild(span);
             if (opts.actionLabel && opts.onAction) {
                 const btn = document.createElement('button');
-                btn.className = 'text-blue-400 hover:text-blue-300 font-semibold text-xs uppercase tracking-wide flex-shrink-0 cursor-pointer';
+                btn.className = 'u-accent hover:text-white font-semibold text-xs uppercase tracking-wide flex-shrink-0 cursor-pointer';
                 btn.textContent = opts.actionLabel;
-                btn.onclick = () => { opts.onAction(); el.remove(); };
+                btn.onclick = () => { opts.onAction(); dismissToast(el); };
                 el.appendChild(btn);
             }
             root.appendChild(el);
-            setTimeout(() => {
-                el.style.opacity = '0';
-                setTimeout(() => el.remove(), 300);
-            }, opts.duration || 4000);
+            const life = opts.duration || 4000;
+            el._timer = setTimeout(() => dismissToast(el), life);
         }
-
-        function animationsEnabled() {
-            try { return localStorage.getItem('guardmail_animations') !== 'off'; } catch (e) { return true; }
+        function dismissToast(el) {
+            clearTimeout(el._timer);
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(6px)';
+            setTimeout(() => el.remove(), animationsEnabled() ? 300 : 0);
         }
 
         // Removes and re-adds an entrance-animation class so it plays again.
         function retriggerAnim(el, cls = 'anim-fade-up') {
             if (!el) return;
+            if (!animationsEnabled()) { el.classList.remove(cls); return; }
             el.classList.remove(cls);
             void el.offsetWidth;
             el.classList.add(cls);
+        }
+
+        // ---- Fluid show / hide ----
+        // gmShow: reveal an element with a gentle fade-up. gmHide: fade it out,
+        // then apply `hidden` once the transition ends so nothing pops away.
+        function gmShow(el) {
+            if (!el) return;
+            el._gmShowing = true;            // cancels any in-flight hide
+            el.classList.remove('hidden');
+            if (!animationsEnabled()) { el.classList.remove('gm-collapsed'); return; }
+            el.classList.add('gm-fade', 'gm-collapsed');
+            void el.offsetWidth;
+            requestAnimationFrame(() => el.classList.remove('gm-collapsed'));
+        }
+        function gmHide(el) {
+            if (!el || el.classList.contains('hidden')) return;
+            el._gmShowing = false;
+            if (!animationsEnabled()) { el.classList.add('hidden'); return; }
+            el.classList.add('gm-fade', 'gm-collapsed');
+            const done = () => {
+                el.removeEventListener('transitionend', done);
+                if (!el._gmShowing) el.classList.add('hidden');   // skip if re-shown mid-fade
+            };
+            el.addEventListener('transitionend', done);
+            setTimeout(done, 400);   // safety net if transitionend never fires
+        }
+        // Crossfade the contents of a container while swapping innerHTML.
+        function gmSwap(el, renderFn) {
+            if (!el) return;
+            if (!animationsEnabled()) { renderFn(); return; }
+            el.style.transition = 'opacity .18s var(--ease)';
+            el.style.opacity = '0';
+            setTimeout(() => {
+                renderFn();
+                requestAnimationFrame(() => { el.style.opacity = '1'; });
+            }, 160);
         }
 
         // Scroll reveals: elements with .reveal fade up the first time they enter
@@ -167,6 +259,9 @@
                 });
             }, { rootMargin: '0px 0px -8% 0px' });
             targets.forEach(t => revealObserver.observe(t));
+
+            // Let hero (.anim-fade-up) elements trigger their ink-underline once in.
+            setTimeout(() => document.body.classList.add('anim-done'), 900);
         });
     </script>
 
@@ -176,7 +271,7 @@
                 <div class="bg-zinc-800 text-zinc-400 p-1.5 rounded-md text-xs">
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <span class="text-sm text-zinc-500">GuardMail AI &middot; &copy; 2026</span>
+                <span class="text-sm text-zinc-500"><span class="font-display text-zinc-400">GuardMail</span> &middot; &copy; 2026</span>
             </div>
             <nav class="flex items-center gap-6 text-sm text-zinc-400">
                 <a href="/how-it-works" class="hover:text-white transition">How It Works</a>

@@ -3,13 +3,13 @@
 {% block content %}
 <main class="max-w-3xl mx-auto p-4 lg:p-6 py-10 space-y-6 w-full flex-1">
     <div>
-        <h1 class="font-display text-2xl font-bold text-white tracking-tight">Settings</h1>
-        <p class="text-sm text-zinc-500 mt-1">Manage your account and preferences.</p>
+        <h1 class="font-display text-3xl font-semibold text-white">Settings</h1>
+        <p class="text-sm text-zinc-500 mt-2">Manage your account and preferences.</p>
     </div>
 
     <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5">
         <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-full {{ 'bg-amber-500' if demo_mode else 'bg-blue-600' }} flex items-center justify-center text-white flex-shrink-0">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 {{ 'bg-amber-500 text-white' if demo_mode else 'bg-[var(--accent)] text-[var(--accent-ink)]' }}">
                 <i class="{{ 'fa-solid fa-flask' if demo_mode else 'fa-brands fa-google' }} text-lg"></i>
             </div>
             <div class="min-w-0">
@@ -29,7 +29,7 @@
                 {% if demo_mode %}
                 <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Leaves the sample inbox and returns you to the home page.</p>
                 {% else %}
-                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Ends your GuardMail session. To fully revoke Gmail access, also remove GuardMail from your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="text-blue-400 underline">Google Account permissions</a>.</p>
+                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Ends your GuardMail session. To fully revoke Gmail access, also remove GuardMail from your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="u-accent underline">Google Account permissions</a>.</p>
                 {% endif %}
             </div>
             <a href="/logout" class="flex-shrink-0 px-4 py-2 text-xs font-semibold rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition">
@@ -51,8 +51,8 @@
                 <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Entrance effects, counters, and transitions across the site. Turn off if you prefer things instant.</p>
             </div>
             <button id="anim-toggle" onclick="toggleAnimations()" role="switch" aria-checked="true" aria-label="Toggle interface animations"
-                    class="flex-shrink-0 relative w-11 h-6 rounded-full bg-blue-600 transition-colors cursor-pointer">
-                <span id="anim-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform translate-x-5"></span>
+                    class="flex-shrink-0 relative w-11 h-6 rounded-full bg-[var(--accent)] transition-colors cursor-pointer">
+                <span id="anim-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[var(--accent-ink)] shadow transition-transform translate-x-5"></span>
             </button>
         </div>
 
@@ -134,8 +134,10 @@
         const on = animationsEnabled();
         const track = document.getElementById('anim-toggle');
         const knob = document.getElementById('anim-knob');
-        track.classList.toggle('bg-blue-600', on);
+        track.classList.toggle('bg-[var(--accent)]', on);
         track.classList.toggle('bg-zinc-700', !on);
+        knob.classList.toggle('bg-[var(--accent-ink)]', on);
+        knob.classList.toggle('bg-zinc-300', !on);
         track.setAttribute('aria-checked', String(on));
         knob.classList.toggle('translate-x-5', on);
     }
