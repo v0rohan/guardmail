@@ -11,7 +11,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23ece3d0%22 d=%22M12 2 4 5v6c0 5 3.5 8.6 8 11 4.5-2.4 8-6 8-11V5z%22/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -32,25 +32,9 @@
             background-color: #0a0a0b;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
         }
-        .font-display { font-family: 'Fraunces', ui-serif, Georgia, serif; font-optical-sizing: auto; letter-spacing: -0.01em; }
+        .font-display { font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif; font-optical-sizing: auto; letter-spacing: -0.02em; }
         .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
         .u-accent { color: var(--accent); }
-
-        /* Highlighter mark: an opaque cream swipe on a ::before behind the word,
-           with the word itself recolored to ink - a real marker fully covers
-           the paper and the dark ink still reads on top, rather than a faint
-           tint that just muddies to gray against a near-black page. The rect
-           is a ::before (not a padded background on the word) so it doesn't
-           push the surrounding line layout, and it overshoots the glyph
-           bounds generously on top so a tall ascender like Fraunces' "f" is
-           never clipped by the shape's edge. */
-        .mark { position: relative; white-space: nowrap; color: var(--accent-ink); }
-        .mark::before {
-            content: ""; position: absolute; z-index: -1;
-            left: -.04em; right: -.04em; top: -.04em; bottom: 0;
-            background: var(--accent); border-radius: .15em;
-            transform: rotate(-.5deg);
-        }
 
         /* Reusable components (single source of truth for the accent). */
         .btn-primary { background: var(--accent); color: var(--accent-ink); }
