@@ -1,3 +1,38 @@
+"""
+GuardMail AI backend (Flask).
+
+Single-file Flask app deployed on Vercel that:
+  - Handles Google OAuth login and stores Gmail credentials in the session cookie
+    (there is no database for user accounts - the session *is* the account).
+  - Fetches the user's inbox via the Gmail API and scores each message for
+    phishing/spam/spoofing risk, using keyword heuristics plus an optional
+    Groq (Llama 3.1) categorizer.
+  - Generates an educational threat report and a quiz for a given email via Groq,
+    falling back to canned responses if Groq is unavailable or fails.
+  - Serves /api/analyze-ext for the Chrome extension, which scores emails scraped
+    directly off the Gmail web UI (no Gmail API access, so no Groq categorization
+    there - just the keyword fallback).
+  - Optionally persists "reported to SOC" cases to Supabase for the /cases history
+    page; without Supabase configured it falls back to an in-memory set that's
+    lost on every serverless cold start (see README "Known limitations").
+
+Rough layout, top to bottom:
+  1. App / session / CORS / rate-limiter setup
+  2. Supabase helpers (reported-case persistence)
+  3. Google OAuth config + scam/spam/dangerous-link keyword lists
+  4. Scoring & classification helpers: spoofing detection, risk scoring, link
+     sandboxing, the local keyword fallback categorizer, and the Groq-backed
+     categorizer/report/quiz calls
+  5. Gmail fetch (fetch_gmail_emails) - pulls one page of messages, batches the
+     per-message Gmail API calls, categorizes them concurrently via Groq
+  6. Routes: /, /demo, /login, /callback, /logout, /api/feed-state, /api/report-soc,
+     /api/analyze-ext, /analyze, /api/quiz, /how-it-works, /settings, /cases,
+     /privacy, plus branded 404/500 error pages
+
+Demo mode: /demo sets session['demo'] and serves a canned, deterministic inbox
+(DEMO_INBOX) through the same scoring pipeline - no Google account or Groq
+quota needed. Reported demo cases live in the session.
+"""
 import os
 import json
 import re
@@ -118,7 +153,7 @@ def list_reported_cases(user_email: str) -> list:
     except Exception:
         return []
 
-# Google OAuth Configuration Matrix
+# Google OAuth client config (see google_auth_oauthlib's expected "web" app format)
 CLIENT_CONFIG = {
     "web": {
         "client_id": os.getenv("GOOGLE_CLIENT_ID"),
@@ -130,19 +165,80 @@ CLIENT_CONFIG = {
 }
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
-# Global tracking framework for reported cases (persisted runtime fallback)
+# In-memory fallback set of reported email ids, used when Supabase isn't
+# configured. Not persisted - resets on every serverless cold start.
 REPORTED_SOC_IDS = set()
 
-# "verify" and "login" deliberately excluded: they're extremely common in
-# legitimate transactional/security emails (university portals, 2FA prompts,
-# password-change confirmations) and were flagging real messages from official
-# domains as scams whenever Groq's call failed and this local fallback kicked in.
-SCAM_KEYWORDS = ["paypal", "bank", "wire", "transfer", "credentials", "bonus"]
-SPAM_KEYWORDS = ["buy", "discount", "free", "marketing", "promotion", "sale", "deals"]
-DANGEROUS_URL_KEYWORDS = [
-    "verify", "login", "secure", "bonus", "claim", "portal",
-    "update", "paypal", "bank", "signin", "verification", "credentials"
+# Scam detection requires BOTH a money/credential hook AND an urgency/pressure
+# hook. Single-keyword matching flagged every legitimate PayPal receipt and bank
+# statement as a scam; real phishing almost always combines "something valuable"
+# with "act fast". "password" deliberately excluded from the money list - genuine
+# password-reset emails pair it with urgency words like "expires".
+SCAM_MONEY_KEYWORDS = [
+    "wire", "transfer", "gift card", "gift cards", "bitcoin", "crypto",
+    "bank", "paypal", "credentials", "prize", "winner", "inheritance",
+    "bonus", "payment", "refund", "invoice",
 ]
+SCAM_URGENCY_KEYWORDS = [
+    "urgent", "urgently", "immediately", "suspended", "locked", "verify",
+    "act now", "final notice", "last chance", "unusual activity",
+    "24 hours", "48 hours", "expires", "limited time",
+]
+# Spam requires two distinct hits - one stray "free" or "sale" in a normal
+# email shouldn't reclassify it.
+SPAM_KEYWORDS = ["buy", "discount", "free", "marketing", "promotion", "sale", "deals", "unsubscribe", "coupon", "offer"]
+
+# Keywords that make an unknown *registered domain* look like a phishing
+# lookalike (paypal-secure-verify.com). Deliberately not applied to subdomains
+# or paths on their own - login.salesforce.com and example.com/login are how
+# real services work; registering "secure-login-verify.net" is how phishing works.
+DANGEROUS_URL_KEYWORDS = [
+    "verify", "secure", "login", "signin", "signon", "account",
+    "update", "banking", "verification", "credentials", "wallet", "webscr",
+]
+
+# Domains whose links are treated as safe outright. The keyword heuristics
+# exist to catch lookalike URLs; the real login/verify pages of major
+# providers were all false-positiving on them.
+TRUSTED_LINK_DOMAINS = (
+    "google.com", "gmail.com", "youtube.com", "apple.com", "icloud.com",
+    "microsoft.com", "live.com", "office.com", "outlook.com", "amazon.com",
+    "paypal.com", "github.com", "gitlab.com", "linkedin.com", "facebook.com",
+    "instagram.com", "netflix.com", "dropbox.com", "docusign.net", "docusign.com",
+    "chase.com", "wellsfargo.com", "zoom.us", "slack.com", "x.com",
+    "twitter.com", "spotify.com", "stripe.com", "shopify.com", "wikipedia.org",
+)
+
+# URL shorteners hide their destination - worth a caution label, but not an
+# automatic "dangerous" since legitimate newsletters use them heavily.
+SHORTENER_DOMAINS = ("bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly", "rebrand.ly", "rb.gy")
+
+# Commonly impersonated brands mapped to the domains they legitimately send
+# from. A sender is only called spoofed when it claims a brand it doesn't
+# match - "bank" was removed as a pseudo-brand because chase.com, bofa.com etc.
+# don't contain the word "bank" and every real bank was getting flagged.
+BRAND_DOMAINS = {
+    "paypal": ("paypal.com", "paypal.co.uk", "paypal.me"),
+    "google": ("google.com", "gmail.com", "googlemail.com", "youtube.com"),
+    "meta": ("meta.com", "facebook.com", "facebookmail.com", "instagram.com"),
+    "facebook": ("facebook.com", "facebookmail.com", "meta.com"),
+    "instagram": ("instagram.com", "facebookmail.com"),
+    "netflix": ("netflix.com",),
+    "amazon": ("amazon.com", "amazonaws.com", "amazonses.com", "amazon.co.uk", "amazon.ca", "amazon.de"),
+    "apple": ("apple.com", "icloud.com", "me.com"),
+    "microsoft": ("microsoft.com", "outlook.com", "live.com", "office.com", "microsoftonline.com"),
+    "chase": ("chase.com", "jpmchase.com", "jpmorgan.com"),
+    "wells fargo": ("wellsfargo.com",),
+    "venmo": ("venmo.com",),
+    "coinbase": ("coinbase.com",),
+    "docusign": ("docusign.net", "docusign.com"),
+    "dropbox": ("dropbox.com", "dropboxmail.com"),
+    "linkedin": ("linkedin.com",),
+    "spotify": ("spotify.com", "spotifymail.com"),
+    "usps": ("usps.com",),
+    "fedex": ("fedex.com",),
+    "irs": ("irs.gov",),
+}
 
 
 def _contains_whole_word(text: str, keywords: list) -> bool:
@@ -150,49 +246,75 @@ def _contains_whole_word(text: str, keywords: list) -> bool:
     return any(re.search(rf'\b{re.escape(k)}\b', text) for k in keywords)
 
 
+def _domain_is_or_under(domain: str, official_domains: tuple) -> bool:
+    return any(domain == d or domain.endswith("." + d) for d in official_domains)
+
+
 def detect_spoofing(sender_str: str) -> bool:
-    """Detects if a popular brand name is being impersonated in the sender display string."""
+    """Flags a sender that claims a well-known brand it doesn't belong to.
+
+    A brand is "claimed" when it appears as a whole word in the display name /
+    local part, or embedded in the sending domain itself (paypal.account-check.net).
+    The claim only counts as spoofing when the actual sending domain is not one
+    of - or a subdomain of - that brand's real domains.
+    """
     sender_lower = sender_str.lower()
-    # "security" deliberately excluded: it's a generic word, not a brand name, and
-    # flagged nearly every legitimate "security alert" email (Google, GitHub, banks...)
-    # as spoofed since real security-team senders rarely have "security" in their domain.
-    monitored_brands = ["paypal", "meta", "google", "netflix", "amazon", "apple", "bank"]
-    
     email_match = re.search(r'<([^>]+)>', sender_str)
     if email_match:
         display_part = sender_lower.split('<')[0]
-        actual_email_domain = email_match.group(1).lower().split('@')[-1]
-        for brand in monitored_brands:
-            if brand in display_part and brand not in actual_email_domain:
-                return True
+        domain = email_match.group(1).lower().split('@')[-1].strip()
+    elif "@" in sender_lower:
+        display_part, domain = sender_lower.split("@", 1)
+        domain = domain.strip()
     else:
-        if "@" in sender_lower:
-            local_part, domain_part = sender_lower.split("@", 1)
-            for brand in monitored_brands:
-                if brand in local_part and brand not in domain_part:
-                    return True
+        return False
+
+    for brand, official_domains in BRAND_DOMAINS.items():
+        brand_word = brand.replace(" ", "")
+        claimed_in_name = re.search(rf'\b{re.escape(brand)}\b', display_part)
+        # \b treats dots and hyphens as boundaries, so this matches "paypal.evil.com"
+        # and "paypal-alerts.net" but not "startups.com" for brand "ups".
+        claimed_in_domain = re.search(rf'\b{re.escape(brand_word)}\b', domain)
+        if (claimed_in_name or claimed_in_domain) and not _domain_is_or_under(domain, official_domains):
+            return True
     return False
 
 
-def calculate_risk_index(category: str, spoofed: bool, links: list) -> int:
-    """Calculates a comprehensive threat matrix risk score between 0 and 100."""
-    score = 10
+def build_risk_factors(category: str, spoofed: bool, links: list) -> list:
+    """Explains a risk score as a list of {label, points} factors.
+
+    This is the single source of truth for scoring - calculate_risk_index just
+    sums it - so the "why this score" breakdown shown in the UI can never drift
+    from the actual number.
+    """
+    factors = [{"label": "Every message starts at a baseline", "points": 10}]
     if category == "Scam Alert":
-        score += 45
+        factors.append({"label": "Content looks like a scam or phishing attempt", "points": 45})
     elif category == "Spam":
-        score += 20
-        
+        factors.append({"label": "Content looks like bulk or promotional mail", "points": 20})
     if spoofed:
-        score += 25
-        
+        factors.append({"label": "Sender claims a brand it doesn't match", "points": 25})
     dangerous_links = sum(1 for l in links if "Dangerous" in l["safety_status"])
-    score += (dangerous_links * 15)
-    
-    return min(score, 100)
+    if dangerous_links:
+        plural = "s" if dangerous_links > 1 else ""
+        factors.append({"label": f"{dangerous_links} suspicious link{plural} in the message", "points": dangerous_links * 15})
+    return factors
+
+
+def calculate_risk_index(category: str, spoofed: bool, links: list) -> int:
+    """Combines category/spoofing/link signals into a 0-100 risk score.
+
+    Base 10, +45 for 'Scam Alert' / +20 for 'Spam', +25 if the sender looks
+    spoofed, +15 per link flagged dangerous by parse_and_sandbox_links. Capped
+    at 100.
+    """
+    return min(sum(f["points"] for f in build_risk_factors(category, spoofed, links)), 100)
 
 
 def calculate_analytics(emails):
-    """Computes operational security metrics across real active inbox parameters."""
+    """Rolls up a list of scored emails (from fetch_gmail_emails) into the
+    dashboard's stat-bar counts: scams, spams, spoofed, SOC-reported, total,
+    and scam percentage."""
     total = len(emails)
     counts = {
         "scams": sum(1 for e in emails if e.get("initial_category") == "Scam Alert"),
@@ -205,28 +327,73 @@ def calculate_analytics(emails):
     return counts
 
 
+def classify_link(url: str) -> str:
+    """Classifies a single URL by how trustworthy its destination looks.
+
+    Order matters: a known-good domain short-circuits everything (real sites
+    link to their own /login pages constantly, which is why keyword checks
+    used to false-positive on nearly every legitimate service email). Beyond
+    that, only host-level signals mark a link dangerous; path keywords alone
+    need two distinct hits, since one '/login' in a path is normal.
+    """
+    from urllib.parse import urlsplit
+    try:
+        parts = urlsplit(url.lower())
+        host = parts.hostname or ""
+    except ValueError:
+        return "Dangerous / Malformed address"
+
+    if _domain_is_or_under(host, TRUSTED_LINK_DOMAINS):
+        return "Trusted domain"
+    if _domain_is_or_under(host, SHORTENER_DOMAINS):
+        return "Shortened link / Destination hidden"
+    if "@" in parts.netloc:
+        return "Dangerous / Disguised destination"
+    if re.fullmatch(r'[0-9.]+|\[[0-9a-f:]+\]', host):
+        return "Dangerous / Raw IP address"
+    if host.startswith("xn--") or ".xn--" in host:
+        return "Dangerous / Lookalike characters"
+
+    # A well-known brand name inside a domain that doesn't belong to that brand
+    # (paypal.account-check.net) is the classic phishing-host shape.
+    for brand, official_domains in BRAND_DOMAINS.items():
+        brand_word = brand.replace(" ", "")
+        if re.search(rf'\b{re.escape(brand_word)}\b', host) and not _domain_is_or_under(host, official_domains):
+            return "Dangerous / Imitates a known brand"
+
+    # Keyword hits in the registered domain itself ("verify-now.tk") are a strong
+    # signal; hits spread across subdomain labels or the path only count when two
+    # or more distinct keywords pile up.
+    registrable = ".".join(host.split(".")[-2:])
+    if _contains_whole_word(registrable, DANGEROUS_URL_KEYWORDS):
+        return "Dangerous / Suspicious address"
+    hits = {k for k in DANGEROUS_URL_KEYWORDS if re.search(rf'\b{re.escape(k)}\b', host + parts.path)}
+    if len(hits) >= 2:
+        return "Dangerous / Suspicious address"
+    return "External link / Unverified"
+
+
 def parse_and_sandbox_links(body_text):
-    """Extracts URLs from email content and flags them based on threat signatures."""
+    """Extracts URLs from the email body and classifies each one - see classify_link."""
     found_urls = re.findall(r'https?://[^\s<>"\')\]\n\r]+', body_text)
     return [
-        {
-            "url": url.rstrip(".,;:"),
-            "safety_status": (
-                "Dangerous / Blacklisted Match"
-                if _contains_whole_word(url.lower(), DANGEROUS_URL_KEYWORDS)
-                else "External Link / Unverified Clear"
-            )
-        }
+        {"url": url.rstrip(".,;:"), "safety_status": classify_link(url.rstrip(".,;:"))}
         for url in found_urls
     ]
 
 
 def fallback_categorize(body: str) -> str:
-    """Local keyword-based fallback categorizer."""
+    """Local keyword-based fallback categorizer, used when Groq is unavailable.
+
+    Scam needs both a money/credential hook and an urgency hook; spam needs two
+    distinct promotional keywords. One keyword alone never reclassifies a
+    message - that's what made legitimate receipts get flagged as scams.
+    """
     lower = body.lower()
-    if _contains_whole_word(lower, SCAM_KEYWORDS):
+    if _contains_whole_word(lower, SCAM_MONEY_KEYWORDS) and _contains_whole_word(lower, SCAM_URGENCY_KEYWORDS):
         return "Scam Alert"
-    if _contains_whole_word(lower, SPAM_KEYWORDS):
+    spam_hits = sum(1 for k in SPAM_KEYWORDS if re.search(rf'\b{re.escape(k)}\b', lower))
+    if spam_hits >= 2:
         return "Spam"
     return "Important"
 
@@ -244,14 +411,26 @@ def truncate_for_prompt(text: str) -> str:
 CATEGORIZE_PROMPT_CHARS = 500
 
 
-def groq_categorize(body: str) -> str | None:
-    """Calls Groq to categorize email. Returns None on failure."""
+def groq_categorize(body: str, sender: str = "", subject: str = "") -> str | None:
+    """Calls Groq to categorize email. Returns None on failure.
+
+    The prompt spells out that routine mail from real companies is NOT a scam -
+    without that instruction the model over-flagged ordinary receipts and
+    notifications, which was the biggest source of false Scam Alerts.
+    """
     if not groq_client or not body:
         return None
     prompt = (
-        "Categorize this email content into exactly one category: "
-        "'High Priority', 'Important', 'Spam', or 'Scam Alert'. "
-        f"Content: {body[:CATEGORIZE_PROMPT_CHARS]}. Return ONLY the classification name, no punctuation."
+        "You classify emails for a phishing-awareness tool. Categories:\n"
+        "- 'Scam Alert': deliberate deception - phishing, impersonation, fake invoices, credential theft, advance-fee fraud.\n"
+        "- 'Spam': unsolicited but non-deceptive bulk mail - marketing, newsletters, promotions.\n"
+        "- 'High Priority': time-sensitive legitimate mail - security codes, password resets, bills due, account notices from real services.\n"
+        "- 'Important': all other normal legitimate mail.\n"
+        "Routine receipts, order confirmations, and notifications from real companies are NOT scams. "
+        "Only choose 'Scam Alert' when the message itself shows deception.\n"
+        f"Sender: {sender[:200]}\nSubject: {subject[:200]}\n"
+        f"Body: {body[:CATEGORIZE_PROMPT_CHARS]}\n"
+        "Reply with exactly one category name and nothing else."
     )
     try:
         completion = groq_client.chat.completions.create(
@@ -286,7 +465,9 @@ def groq_json_call(prompt: str) -> dict | None:
 
 
 def get_email_body(payload):
-    """Recursively processes multi-part structures to extract safe plain text segments, with HTML fallback tracking."""
+    """Extracts a text body from a Gmail message payload, which may be a
+    nested multipart structure. Prefers a text/plain part; if none exists,
+    falls back to the first text/html part with its tags stripped."""
     import base64
     if 'parts' in payload:
         # Step A: Attempt to prioritize clean raw plain text data packets
@@ -321,8 +502,33 @@ def get_email_body(payload):
     return ""
 
 
+def score_email(meta: dict, category: str, soc_reported: bool = False) -> dict:
+    """Runs one email (id/sender/subject/date/body) through the scoring pipeline
+    and returns the full dict shape the dashboard consumes."""
+    spoofed = detect_spoofing(meta["sender"])
+    links = parse_and_sandbox_links(meta["body"])
+    return {
+        "id": meta["id"],
+        "sender": meta["sender"],
+        "subject": meta["subject"],
+        "date": meta["date"],
+        "body": meta["body"],  # un-truncated: the viewer pane shows the full text
+        "initial_category": category,
+        "spoofing_detected": spoofed,
+        "risk_score": calculate_risk_index(category, spoofed, links),
+        "risk_factors": build_risk_factors(category, spoofed, links),
+        "soc_reported": soc_reported,
+        "links": links,
+    }
+
+
 def fetch_gmail_emails(page_token=None, reported_ids=None):
-    """Builds access credentials and queries live Gmail message matrices seamlessly supporting token pagination.
+    """Fetches and scores one page (5 messages) of the signed-in user's Gmail inbox.
+
+    Rebuilds Google API credentials from the session, lists message ids for the
+    requested page, fetches those messages in a single batched HTTP request, then
+    scores each one (category, spoofing, links, risk_score) - see the per-email
+    dict shape built below.
 
     Returns a 3-tuple: (emails_list, next_page_token, error_message). error_message is
     None on success, or a short human-readable string if the Gmail fetch failed, so
@@ -391,29 +597,14 @@ def fetch_gmail_emails(page_token=None, reported_ids=None):
         if emails_meta:
             with ThreadPoolExecutor(max_workers=len(emails_meta)) as executor:
                 categories = list(executor.map(
-                    lambda meta: groq_categorize(meta["body"]) or fallback_categorize(meta["body"]),
+                    lambda meta: groq_categorize(meta["body"], meta["sender"], meta["subject"]) or fallback_categorize(meta["body"]),
                     emails_meta
                 ))
 
-        emails_list = []
-        for meta, category in zip(emails_meta, categories):
-            spoofed = detect_spoofing(meta["sender"])
-            links = parse_and_sandbox_links(meta["body"])
-            risk_score = calculate_risk_index(category, spoofed, links)
-            soc_reported = meta["id"] in reported_ids
-
-            emails_list.append({
-                "id": meta["id"],
-                "sender": meta["sender"],
-                "subject": meta["subject"],
-                "date": meta["date"],
-                "body": meta["body"],  # Preserving un-truncated content lengths for deep internal viewing
-                "initial_category": category,
-                "spoofing_detected": spoofed,
-                "risk_score": risk_score,
-                "soc_reported": soc_reported,
-                "links": links
-            })
+        emails_list = [
+            score_email(meta, category, soc_reported=meta["id"] in reported_ids)
+            for meta, category in zip(emails_meta, categories)
+        ]
         return emails_list, next_page_token, None
     except RefreshError:
         # Refresh token expired/revoked - no amount of retrying will fix this from
@@ -422,6 +613,112 @@ def fetch_gmail_emails(page_token=None, reported_ids=None):
         return [], None, "Your Gmail session expired. Please sign in again."
     except Exception as exc:
         return [], None, f"Couldn't reach Gmail: {exc.__class__.__name__}"
+
+
+# The demo inbox: a canned mix of obvious phish, borderline spam, and clearly
+# legitimate mail (including a real-looking PayPal receipt, which older scoring
+# versions false-flagged). Scored at request time through the same pipeline as
+# real mail so the demo always reflects current behavior.
+DEMO_INBOX = [
+    {
+        "sender": "PayPal Support <service@paypal-alerts-center.com>",
+        "subject": "Your account has been limited",
+        "age_minutes": 35,
+        "body": (
+            "Dear Customer,\n\nWe noticed unusual activity on your PayPal account and it has been "
+            "temporarily limited. Please verify your information within 24 hours to avoid permanent "
+            "suspension:\n\nhttps://paypal.account-verification-center.com/secure\n\n"
+            "Failure to verify will result in account closure.\n\nPayPal Security Team"
+        ),
+    },
+    {
+        "sender": "Chase Online Banking <alerts@chase-secure-update.net>",
+        "subject": "Unusual activity detected on your account",
+        "age_minutes": 130,
+        "body": (
+            "We detected unusual activity involving a wire transfer from your checking account. "
+            "Sign in immediately to review this activity or your account will be locked:\n\n"
+            "http://chase-secure-update.net/login/verify\n\nChase Fraud Prevention"
+        ),
+    },
+    {
+        "sender": "Prize Notification <winner-dept@rewardclaims-notify.xyz>",
+        "subject": "Congratulations! Claim your $500 gift card",
+        "age_minutes": 310,
+        "body": (
+            "Congratulations! You have been selected as this week's winner of a $500 gift card. "
+            "Act now - this offer expires in 48 hours.\n\nClaim here: https://bit.ly/3xZ9qLm\n\n"
+            "The Rewards Team"
+        ),
+    },
+    {
+        "sender": "USPS Redelivery <tracking@usps-package-alerts.info>",
+        "subject": "Package on hold - schedule redelivery",
+        "age_minutes": 900,
+        "body": (
+            "Your package could not be delivered due to an incomplete address. A redelivery payment "
+            "of $1.99 is required. Complete it immediately or your parcel will be returned to sender:\n\n"
+            "http://usps-package-alerts.info/track/redelivery\n\nUSPS Customer Service"
+        ),
+    },
+    {
+        "sender": "PayPal <service@paypal.com>",
+        "subject": "Receipt for your payment to Spotify AB",
+        "age_minutes": 1500,
+        "body": (
+            "You sent a payment of $12.99 USD to Spotify AB.\n\nView the details of this transaction "
+            "in your account:\n\nhttps://www.paypal.com/myaccount/transactions\n\nThanks for using PayPal."
+        ),
+    },
+    {
+        "sender": "GitHub <noreply@github.com>",
+        "subject": "[GitHub] Your personal access token is expiring",
+        "age_minutes": 2100,
+        "body": (
+            "Your personal access token 'ci-deploy' will expire in 7 days.\n\nIf it's still needed, "
+            "you can generate a new token:\n\nhttps://github.com/settings/tokens\n\n"
+            "Thanks,\nThe GitHub Team"
+        ),
+    },
+    {
+        "sender": "ShopSphere <hello@shopsphere-mail.com>",
+        "subject": "This weekend only: 40% off everything",
+        "age_minutes": 3000,
+        "body": (
+            "This weekend only: 40% discount on all spring styles. Free shipping on orders over $50. "
+            "Shop the sale before it ends Sunday night.\n\nhttps://shopsphere-mail.com/spring\n\n"
+            "No longer want these emails? Unsubscribe: https://shopsphere-mail.com/preferences"
+        ),
+    },
+    {
+        "sender": "Maya Chen <maya.chen@gmail.com>",
+        "subject": "Dinner on Saturday?",
+        "age_minutes": 4200,
+        "body": (
+            "Hey!\n\nAre we still on for dinner Saturday? There's a new ramen place near the park "
+            "I've been wanting to try.\n\nLet me know!\nMaya"
+        ),
+    },
+]
+
+
+def build_demo_emails():
+    """Scores the canned demo inbox. Uses the keyword fallback categorizer only -
+    demo traffic shouldn't spend Groq quota, and the fallback keeps it deterministic."""
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    reported = set(session.get('reported_ids', []))
+    emails = []
+    for i, item in enumerate(DEMO_INBOX):
+        meta = {
+            "id": f"demo-{i + 1}",
+            "sender": item["sender"],
+            "subject": item["subject"],
+            "date": (now - timedelta(minutes=item["age_minutes"])).isoformat(),
+            "body": item["body"],
+        }
+        emails.append(score_email(meta, fallback_categorize(item["body"]), soc_reported=meta["id"] in reported))
+    return emails
 
 
 def _reported_ids_for_session():
@@ -435,9 +732,26 @@ def _reported_ids_for_session():
     return ids
 
 
+@app.context_processor
+def inject_demo_flag():
+    """Makes demo_mode available to every template (header shows a demo badge)."""
+    return {"demo_mode": bool(session.get('demo'))}
+
+
+@app.route('/demo')
+def demo():
+    """Sandbox mode: browse a canned inbox with no Google account. Lets visitors
+    try the product before granting Gmail access."""
+    session.clear()
+    session['demo'] = True
+    return redirect('/')
+
+
 @app.route('/')
 def index():
-    if 'credentials' not in session:
+    """Dashboard shell. Renders logged-out or logged-in state only - the actual
+    inbox contents load client-side afterwards via /api/feed-state."""
+    if 'credentials' not in session and not session.get('demo'):
         return render_template('index.html', logged_in=False)
     # Emails are fetched client-side via /api/feed-state on page load instead of
     # blocking this response - Gmail + AI categorization can take a few seconds,
@@ -447,7 +761,8 @@ def index():
 
 @app.route('/login')
 def login():
-    """Initializes Google OAuth pipeline variables and options."""
+    """Starts the Google OAuth flow: builds the Google consent-screen URL,
+    stashes a CSRF state token in the session, and redirects the browser there."""
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
         CLIENT_CONFIG,
         scopes=SCOPES
@@ -463,7 +778,9 @@ def login():
 
 @app.route('/callback')
 def callback():
-    """Transforms verification properties into runtime auth tokens securely while mitigating state-mismatch panics."""
+    """Google OAuth redirect target. Verifies the CSRF state param matches what
+    /login stashed, exchanges the authorization code for credentials, stores
+    those credentials in the session, and looks up the user's email address."""
     state = session.get('state')
     incoming_state = request.args.get('state')
     
@@ -512,13 +829,28 @@ def callback():
 
 @app.route('/logout')
 def logout():
-    """Clears localized cookie metrics configuration parameters safely."""
+    """Logs the user out by clearing the session (drops the stored Gmail credentials)."""
     session.clear()
     return redirect('/')
 
 
 @app.route('/api/feed-state', methods=['GET'])
 def stream_feed_state():
+    """Returns one page of scored inbox emails plus running analytics, for the
+    dashboard's infinite-scroll feed (index.html polls this on load and on
+    scroll, passing back the previous next_token to page forward)."""
+    if session.get('demo'):
+        # Paged like the real inbox (5 per page) so the demo exercises the same
+        # infinite-scroll path the Gmail feed uses.
+        page_size = 5
+        try:
+            offset = int(request.args.get('pageToken') or 0)
+        except ValueError:
+            offset = 0
+        emails = build_demo_emails()
+        page = emails[offset:offset + page_size]
+        next_token = str(offset + page_size) if offset + page_size < len(emails) else None
+        return jsonify({"emails": page, "next_token": next_token, "analytics": calculate_analytics(page), "error": None})
     if 'credentials' not in session:
         return jsonify({"emails": [], "next_token": None, "analytics": {"total": 0, "spoofed": 0, "soc_cases": 0, "percentage": 0}, "error": None})
 
@@ -543,13 +875,32 @@ def stream_feed_state():
 
 @app.route('/api/report-soc/<email_id>', methods=['POST'])
 def report_to_soc(email_id):
-    """Documents incident and escalates telemetry properties to the Enterprise SOC layer."""
+    """Marks an email as reported. Adds it to the in-memory REPORTED_SOC_IDS
+    set and the session's cached reported-ids list (both used to render the
+    "reported" badge), and persists it to Supabase - if configured - so it
+    shows up on the /cases history page."""
     REPORTED_SOC_IDS.add(email_id)
 
     cached_ids = session.get('reported_ids', [])
     if email_id not in cached_ids:
         cached_ids.append(email_id)
     session['reported_ids'] = cached_ids
+
+    if session.get('demo'):
+        # Demo cases live in the session so the /cases page works without Supabase.
+        from datetime import datetime, timezone
+        data = request.json or {}
+        demo_cases = session.get('demo_cases', [])
+        if not any(c.get('email_id') == email_id for c in demo_cases):
+            demo_cases.insert(0, {
+                "email_id": email_id,
+                "sender": str(data.get('sender', ''))[:500],
+                "subject": str(data.get('subject', ''))[:500],
+                "risk_score": data.get('risk_score', 0),
+                "reported_at": datetime.now(timezone.utc).strftime("%b %d, %Y at %H:%M UTC"),
+            })
+        session['demo_cases'] = demo_cases
+        return jsonify({"status": "success", "message": "Email reported."})
 
     user_email = session.get('user_email')
     if SUPABASE_CONFIGURED and user_email:
@@ -566,7 +917,7 @@ def report_to_soc(email_id):
             risk_score=risk_score,
         )
 
-    return jsonify({"status": "success", "message": f"Payload {email_id} successfully dispatched to SOC."})
+    return jsonify({"status": "success", "message": "Email reported."})
 
 
 @app.route('/api/analyze-ext', methods=['POST'])
@@ -605,30 +956,32 @@ def analyze_email(email_id):
     lower = body.lower()
     if "paypal" in lower or "bank" in lower or "wire" in lower:
         fallback = {
-            "threat_type": "Financial Wire Scam",
+            "threat_type": "Possible Payment Scam",
             "educational_report": (
-                "The request demands immediate financial verification or wire parameters. "
-                "Legitimate payment vendors will never ask for credentials via direct text paths."
+                "This message pushes you to act on a payment or account problem. Real companies "
+                "don't ask for account details or payments over email - if you're unsure, go to "
+                "the company's website yourself instead of using any link in the message."
             ),
-            "indicators": ["Financial coercion hook", "Impersonated payment vendor gateway"]
+            "indicators": ["Asks you to act on a payment or account issue", "Pressure to respond quickly"]
         }
     elif "login" in lower or "verify" in lower or "portal" in lower:
         fallback = {
-            "threat_type": "Phishing Link Attack",
+            "threat_type": "Possible Phishing Link",
             "educational_report": (
-                "This payload utilizes artificial redirect URLs to harvest credentials. "
-                "Inspect link structures carefully to confirm mismatch anomalies before clicking."
+                "This message steers you toward a sign-in or verification link. Scammers use "
+                "lookalike web addresses to steal passwords - check the address carefully, and "
+                "when in doubt, type the site's address into your browser yourself."
             ),
-            "indicators": ["Deceptive link redirection setup", "Psychological action-inducing threat"]
+            "indicators": ["Contains a sign-in or verification link", "May imitate a real website"]
         }
     else:
         fallback = {
-            "threat_type": "Suspicious Threat Signature",
+            "threat_type": "Suspicious Message",
             "educational_report": (
-                "This message possesses active psychological hooks. Avoid sharing security credentials, "
-                "private identity details, or authorization profiles."
+                "Something about this message looks off. Don't share passwords, codes, or personal "
+                "details, and confirm the request with the sender through another channel before acting."
             ),
-            "indicators": ["Urgent actionable demands", "Generic unrecognized email domain routing"]
+            "indicators": ["Unexpected or unusual request", "Sender you may not recognize"]
         }
 
     prompt = f"""
@@ -656,17 +1009,17 @@ def generate_quiz(email_id):
     body = str(data.get('body', ''))
 
     fallback = {
-        "question": "What is the primary indicator of compromise present within this email?",
+        "question": "What's the biggest warning sign in an email like this one?",
         "options": [
-            "The urgent warning tone demanding quick, unverified action",
-            "The presence of external, blacklisted redirect hyperlinks",
-            "The generic greeting and unmatched email domain",
+            "An urgent tone pushing you to act before you can think",
+            "Links that don't lead where they claim to",
+            "A generic greeting from a sender you don't recognize",
             "All of the above"
         ],
         "correct_index": 3,
         "explanation": (
-            "Scam campaigns typically integrate multiple psychological and structural warning flags "
-            "simultaneously to maximize impact."
+            "Scam emails usually stack several tricks at once - urgency, misleading links, "
+            "and vague greetings - to pressure you into clicking."
         )
     }
 
@@ -686,20 +1039,70 @@ Return ONLY raw valid JSON. No markdown.
     return jsonify({"status": "success", "quiz": quiz})
 
 
+def _is_signed_in() -> bool:
+    """True for a real Gmail session or demo mode - drives which header/nav renders."""
+    return 'credentials' in session or bool(session.get('demo'))
+
+
 @app.route('/how-it-works')
 def how_it_works():
-    return render_template('how_it_works.html', logged_in='credentials' in session, active_page='how-it-works')
+    """Static explainer page - no auth required."""
+    return render_template('how_it_works.html', logged_in=_is_signed_in(), active_page='how-it-works')
+
+
+@app.route('/privacy')
+def privacy():
+    """Static privacy policy page - no auth required."""
+    return render_template('privacy.html', logged_in=_is_signed_in())
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Not found"}), 404
+    return render_template(
+        'error.html',
+        logged_in=_is_signed_in(),
+        code=404,
+        heading="Page not found",
+        message="The page you're looking for doesn't exist or may have moved.",
+    ), 404
+
+
+@app.errorhandler(500)
+def internal_error(e):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Something went wrong on our end"}), 500
+    return render_template(
+        'error.html',
+        logged_in=_is_signed_in(),
+        code=500,
+        heading="Something went wrong",
+        message="An unexpected error occurred on our end. Please try again in a moment.",
+    ), 500
 
 
 @app.route('/settings')
 def settings():
-    if 'credentials' not in session:
+    """Settings page. Requires login (or demo mode)."""
+    if 'credentials' not in session and not session.get('demo'):
         return redirect('/')
     return render_template('settings.html', logged_in=True, active_page='settings', user_email=session.get('user_email'))
 
 
 @app.route('/cases')
 def cases():
+    """Lists this user's previously reported cases - from the session in demo
+    mode, from Supabase otherwise (empty if Supabase isn't configured).
+    Requires login (or demo mode)."""
+    if session.get('demo'):
+        return render_template(
+            'cases.html',
+            logged_in=True,
+            active_page='cases',
+            cases=session.get('demo_cases', []),
+            supabase_configured=True,
+        )
     if 'credentials' not in session:
         return redirect('/')
     user_email = session.get('user_email')

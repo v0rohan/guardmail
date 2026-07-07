@@ -10,12 +10,26 @@ same scan on an open Gmail thread without leaving your inbox.
 
 - **Backend** (`api/index.py`): Flask app. Logs in via Google OAuth
   (read-only Gmail scope), pulls your inbox, and for each message computes:
-  - a keyword/Groq-based category (`Important`, `High Priority`, `Spam`, `Scam Alert`)
-  - a spoofed-sender check (display name brand vs. actual domain)
-  - a risk score (0-100) from category, spoofing, and any flagged links
+  - a category (`Important`, `High Priority`, `Spam`, `Scam Alert`) via Groq,
+    with a conservative keyword fallback that requires both a money/credential
+    hook *and* an urgency hook before calling anything a scam
+  - a spoofed-sender check: a message is flagged only when it claims a
+    well-known brand (in the display name or a lookalike domain) but wasn't
+    sent from that brand's real domains (`BRAND_DOMAINS`)
+  - a per-link classification: trusted domains pass (including their real
+    login pages); lookalike hosts, keyword-registered domains, raw-IP links,
+    and disguised destinations are dangerous; shorteners get a caution label
+  - a risk score (0-100) plus a `risk_factors` breakdown explaining it,
+    surfaced in the UI as "Why this score?"
   - on demand, an AI-generated threat report and quiz question (`Groq`)
-- **Frontend** (`templates/index.html`): single-page dashboard — inbox list
-  with search/sort, a message viewer, link sandbox, AI analysis pane, and quiz.
+- **Frontend** (`templates/index.html`): dashboard with inbox
+  search/sort/filter chips, keyboard navigation (`j`/`k`/`/`/`Esc`), a message
+  viewer with score breakdown, link sandbox, AI analysis pane with copy-report,
+  quizzes with browser-local score tracking, mark-sender-as-safe (trusted
+  senders, browser-local), reported-cases CSV export, and toasts.
+- **Demo mode** (`/demo`): a canned sample inbox served through the same
+  scoring pipeline — no Google account or Groq quota needed. Great for trying
+  the product (or developing the UI) without OAuth.
 - **Extension** (`extension/`): a Manifest V3 Chrome extension that injects a
   "scan" button into Gmail and posts the open email to the backend for the
   same scoring, independent of the dashboard's own inbox fetch.
@@ -64,7 +78,10 @@ pytest tests/
 ```
 
 Covers the pure scoring/classification helpers (`detect_spoofing`,
-`calculate_risk_index`, `parse_and_sandbox_links`, `fallback_categorize`).
+`calculate_risk_index`, `build_risk_factors`, `classify_link`,
+`parse_and_sandbox_links`, `fallback_categorize`), with regression tests for
+the false-positive cases (real banks, providers' own login pages, receipts
+that merely mention money).
 
 ## Deployment
 

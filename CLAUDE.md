@@ -92,6 +92,37 @@ limiting on the Groq-backed routes, added inbox search/sort and client-side
 AI/quiz result caching, made the extension's backend URL configurable, added
 unit tests, and wrote the README.
 
+A later product pass (July 2026) overhauled scoring to kill false positives
+(brand->official-domain spoof matching via BRAND_DOMAINS, trusted-domain link
+allowlist, registrable-domain keyword checks, money+urgency requirement in the
+fallback categorizer), added risk_factors ("Why this score?") to every scored
+email, added /demo mode (canned inbox through the real pipeline - also the
+easiest way to develop/verify the logged-in UI without OAuth), and grew the
+frontend: trusted senders (localStorage), keyboard nav, toasts, skeletons,
+quiz score tracking, cases CSV export, landing page with product mockup,
+privacy policy, and branded error pages.
+
+A follow-up polish pass fixed the infinite-scroll stall (IntersectionObserver
+only fires on intersection *changes* - loadNextBatch now re-observes after
+every batch, plus a manual "Load more" fallback; demo mode pages 5-at-a-time
+to exercise this path), swapped the blue-tinted slate palette for neutral
+zinc, and added a motion system in base.html (gm-fade-up/gm-pop keyframes,
+.reveal scroll reveals, count-up stats, SVG risk-score ring). All motion is
+disabled by html.no-anim, driven by the Settings "Interface animations"
+toggle (localStorage guardmail_animations) and prefers-reduced-motion. Note:
+don't use requestAnimationFrame for state that must eventually apply - it
+never fires in hidden tabs (the risk ring uses setTimeout for this reason).
+
+The dashboard now uses a Gmail-style shell: desktop sidebar (category filters
+with live counts, "Inbox health" grade, shortcuts hint - mobile falls back to
+filter chips), a rounded top search bar, slim list header, rows with
+read/unread dimming (session-scoped viewedIds) and hover quick-actions
+(report / trust toggle) that call dispatchSocReport/quickToggleSafe without
+opening the message. Keyboard: j/k navigate, / search, r report, ? shortcuts
+overlay, Esc closes. The landing has an asymmetric hero (copy left, mockup
+right), a marquee ticker of scam subject lines, and an interactive
+"spot the phish" two-card game (pickPhish in the logged-out scripts block).
+
 **Known, deliberate limitations** (see README "Known limitations" for why):
 SOC-report state and the rate limiter are in-memory only — they reset on
 serverless cold starts. This was a conscious choice to avoid adding external

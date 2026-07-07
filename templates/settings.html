@@ -1,37 +1,157 @@
 {% extends "base.html" %}
 {% block title %}Settings - GuardMail{% endblock %}
 {% block content %}
-<main class="max-w-3xl mx-auto p-4 lg:p-6 py-10 space-y-6">
+<main class="max-w-3xl mx-auto p-4 lg:p-6 py-10 space-y-6 w-full flex-1">
     <div>
-        <h1 class="text-2xl font-bold text-white tracking-tight">Settings</h1>
-        <p class="text-sm text-slate-500 mt-1">Manage your connected Google account.</p>
+        <h1 class="font-display text-2xl font-bold text-white tracking-tight">Settings</h1>
+        <p class="text-sm text-zinc-500 mt-1">Manage your account and preferences.</p>
     </div>
 
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5">
         <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white flex-shrink-0">
-                <i class="fa-brands fa-google text-lg"></i>
+            <div class="w-12 h-12 rounded-full {{ 'bg-amber-500' if demo_mode else 'bg-blue-600' }} flex items-center justify-center text-white flex-shrink-0">
+                <i class="{{ 'fa-solid fa-flask' if demo_mode else 'fa-brands fa-google' }} text-lg"></i>
             </div>
             <div class="min-w-0">
-                <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">Connected account</p>
-                <p class="text-sm font-semibold text-white mt-0.5 truncate">{{ user_email or "Unknown" }}</p>
+                <p class="text-xs uppercase tracking-wide text-zinc-500 font-medium">Connected account</p>
+                <p class="text-sm font-semibold text-white mt-0.5 truncate">{{ "Demo account" if demo_mode else (user_email or "Unknown") }}</p>
             </div>
         </div>
 
-        <div class="border-t border-slate-800 pt-5">
-            <p class="text-xs uppercase tracking-wide text-slate-500 font-medium mb-2">Access</p>
-            <p class="text-sm text-slate-400 leading-relaxed">GuardMail has read-only access to your Gmail inbox. We never send, delete, or modify your email.</p>
+        <div class="border-t border-zinc-800 pt-5">
+            <p class="text-xs uppercase tracking-wide text-zinc-500 font-medium mb-2">Access</p>
+            <p class="text-sm text-zinc-400 leading-relaxed">GuardMail has read-only access to your Gmail inbox. We never send, delete, or modify your email.</p>
         </div>
 
-        <div class="border-t border-slate-800 pt-5 flex items-start justify-between gap-4">
+        <div class="border-t border-zinc-800 pt-5 flex items-start justify-between gap-4">
             <div>
-                <p class="text-sm font-medium text-white">Disconnect Google account</p>
-                <p class="text-xs text-slate-500 mt-1 leading-relaxed">Ends your GuardMail session. To fully revoke Gmail access, also remove GuardMail from your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="text-blue-400 underline">Google Account permissions</a>.</p>
+                <p class="text-sm font-medium text-white">{{ "Exit demo mode" if demo_mode else "Disconnect Google account" }}</p>
+                {% if demo_mode %}
+                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Leaves the sample inbox and returns you to the home page.</p>
+                {% else %}
+                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Ends your GuardMail session. To fully revoke Gmail access, also remove GuardMail from your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="text-blue-400 underline">Google Account permissions</a>.</p>
+                {% endif %}
             </div>
             <a href="/logout" class="flex-shrink-0 px-4 py-2 text-xs font-semibold rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition">
-                Disconnect
+                {{ "Exit demo" if demo_mode else "Disconnect" }}
             </a>
         </div>
     </div>
+
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5">
+        <div>
+            <p class="text-xs uppercase tracking-wide text-zinc-500 font-medium mb-1">Trusted senders</p>
+            <p class="text-sm text-zinc-400 leading-relaxed">Senders you've marked as safe. GuardMail mutes alerts for them. This list is stored in your browser only.</p>
+        </div>
+        <div id="trusted-senders-list" class="space-y-2"></div>
+
+        <div class="border-t border-zinc-800 pt-5 flex items-start justify-between gap-4">
+            <div>
+                <p class="text-sm font-medium text-white">Interface animations</p>
+                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">Entrance effects, counters, and transitions across the site. Turn off if you prefer things instant.</p>
+            </div>
+            <button id="anim-toggle" onclick="toggleAnimations()" role="switch" aria-checked="true" aria-label="Toggle interface animations"
+                    class="flex-shrink-0 relative w-11 h-6 rounded-full bg-blue-600 transition-colors cursor-pointer">
+                <span id="anim-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform translate-x-5"></span>
+            </button>
+        </div>
+
+        <div class="border-t border-zinc-800 pt-5 flex items-start justify-between gap-4">
+            <div>
+                <p class="text-sm font-medium text-white">Quiz progress</p>
+                <p id="quiz-progress-text" class="text-xs text-zinc-500 mt-1 leading-relaxed">No quizzes answered yet.</p>
+            </div>
+            <button id="quiz-reset-btn" onclick="resetQuizProgress()" class="hidden flex-shrink-0 px-4 py-2 text-xs font-semibold rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition cursor-pointer">
+                Reset
+            </button>
+        </div>
+    </div>
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const TRUSTED_KEY = 'guardmail_trusted_senders';
+    const QUIZ_STATS_KEY = 'guardmail_quiz_stats';
+
+    function getTrustedSenders() {
+        try { return JSON.parse(localStorage.getItem(TRUSTED_KEY)) || []; }
+        catch (e) { return []; }
+    }
+
+    function removeTrustedSender(addr) {
+        const remaining = getTrustedSenders().filter(a => a !== addr);
+        try { localStorage.setItem(TRUSTED_KEY, JSON.stringify(remaining)); } catch (e) {}
+        renderTrustedSenders();
+        showToast(`${addr} removed from trusted senders`);
+    }
+
+    function renderTrustedSenders() {
+        const box = document.getElementById('trusted-senders-list');
+        const senders = getTrustedSenders();
+        if (senders.length === 0) {
+            box.innerHTML = '<p class="text-xs text-zinc-600 italic">Nothing here yet. Open a flagged email in your inbox and choose "Mark sender as safe".</p>';
+            return;
+        }
+        box.textContent = '';
+        senders.forEach(addr => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between gap-3 bg-zinc-800/50 border border-zinc-700 rounded-lg px-3 py-2';
+            const label = document.createElement('span');
+            label.className = 'text-xs text-zinc-300 truncate';
+            label.textContent = addr;
+            const btn = document.createElement('button');
+            btn.className = 'text-xs font-medium text-rose-400 hover:text-rose-300 flex-shrink-0 cursor-pointer';
+            btn.textContent = 'Remove';
+            btn.onclick = () => removeTrustedSender(addr);
+            row.append(label, btn);
+            box.appendChild(row);
+        });
+    }
+
+    function renderQuizProgress() {
+        let stats;
+        try { stats = JSON.parse(localStorage.getItem(QUIZ_STATS_KEY)) || { correct: 0, total: 0 }; }
+        catch (e) { stats = { correct: 0, total: 0 }; }
+        const text = document.getElementById('quiz-progress-text');
+        const btn = document.getElementById('quiz-reset-btn');
+        if (stats.total === 0) {
+            text.innerText = 'No quizzes answered yet.';
+            btn.classList.add('hidden');
+        } else {
+            text.innerText = `You've answered ${stats.correct} of ${stats.total} quiz questions correctly.`;
+            btn.classList.remove('hidden');
+        }
+    }
+
+    function resetQuizProgress() {
+        try { localStorage.removeItem(QUIZ_STATS_KEY); } catch (e) {}
+        renderQuizProgress();
+        showToast('Quiz progress reset');
+    }
+
+    function renderAnimToggle() {
+        const on = animationsEnabled();
+        const track = document.getElementById('anim-toggle');
+        const knob = document.getElementById('anim-knob');
+        track.classList.toggle('bg-blue-600', on);
+        track.classList.toggle('bg-zinc-700', !on);
+        track.setAttribute('aria-checked', String(on));
+        knob.classList.toggle('translate-x-5', on);
+    }
+
+    function toggleAnimations() {
+        const turningOff = animationsEnabled();
+        try { localStorage.setItem('guardmail_animations', turningOff ? 'off' : 'on'); } catch (e) {}
+        document.documentElement.classList.toggle('no-anim', turningOff);
+        renderAnimToggle();
+        showToast(turningOff ? 'Animations turned off' : 'Animations turned on');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        renderTrustedSenders();
+        renderQuizProgress();
+        renderAnimToggle();
+    });
+</script>
 {% endblock %}

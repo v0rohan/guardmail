@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "guardmail",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["api/index.py"],
+      "port": 3000
+    }
+  ]
+}

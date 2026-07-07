@@ -1,35 +1,41 @@
 {% extends "base.html" %}
 {% block title %}How GuardMail Works{% endblock %}
 {% block content %}
-<main class="max-w-3xl mx-auto p-4 lg:p-6 py-10 space-y-8">
+<main class="max-w-3xl mx-auto p-4 lg:p-6 py-10 space-y-8 w-full flex-1">
     <div>
-        <h1 class="text-2xl font-bold text-white tracking-tight">How GuardMail works</h1>
-        <p class="text-sm text-slate-500 mt-1">A transparent look at what we check and how scoring works.</p>
+        <h1 class="font-display text-2xl font-bold text-white tracking-tight">How GuardMail works</h1>
+        <p class="text-sm text-zinc-500 mt-1">A transparent look at what we check and how scoring works. Want to see it in action first? <a href="/demo" class="text-blue-400 underline">Try the demo</a> — no account needed.</p>
     </div>
 
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-3">
+    <div class="reveal bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-3">
         <h2 class="text-sm font-semibold text-white flex items-center space-x-2"><i class="fa-solid fa-inbox text-blue-400"></i><span>1. We read your inbox (read-only)</span></h2>
-        <p class="text-sm text-slate-400 leading-relaxed">After you sign in with Google, GuardMail requests read-only Gmail access and pulls in your recent messages. We never send, delete, or modify anything in your mailbox.</p>
+        <p class="text-sm text-zinc-400 leading-relaxed">After you sign in with Google, GuardMail requests read-only Gmail access and pulls in your recent messages. We never send, delete, or modify anything in your mailbox.</p>
     </div>
 
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-3">
+    <div class="reveal bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-3">
         <h2 class="text-sm font-semibold text-white flex items-center space-x-2"><i class="fa-solid fa-mask text-rose-400"></i><span>2. Spoofing detection</span></h2>
-        <p class="text-sm text-slate-400 leading-relaxed">We compare the sender's display name against a list of commonly impersonated brands (PayPal, Google, banks, and similar). If a brand name appears in the display name but doesn't match the sender's actual email domain, the message is flagged as a likely spoof.</p>
+        <p class="text-sm text-zinc-400 leading-relaxed">We keep a list of commonly impersonated brands (PayPal, Google, Amazon, major banks, delivery services, and more) together with the domains they really send from. If a message claims one of those brands — in the sender name or buried in a lookalike domain — but wasn't sent from that brand's real domain, it's flagged as a likely spoof. Mail actually sent from the brand's own domain is never flagged.</p>
     </div>
 
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-3">
-        <h2 class="text-sm font-semibold text-white flex items-center space-x-2"><i class="fa-solid fa-link text-amber-400"></i><span>3. Link sandboxing</span></h2>
-        <p class="text-sm text-slate-400 leading-relaxed">URLs in the message body are extracted and checked against a list of keywords commonly used in phishing links (verify, login, secure, claim, portal, and similar). Matches are flagged as dangerous before you ever click them.</p>
+    <div class="reveal bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-3">
+        <h2 class="text-sm font-semibold text-white flex items-center space-x-2"><i class="fa-solid fa-link text-amber-400"></i><span>3. Link checks</span></h2>
+        <p class="text-sm text-zinc-400 leading-relaxed">Every URL in a message is classified. Links to well-known domains pass as trusted — including their real sign-in pages. A link is marked dangerous when its address looks like a phishing setup: a known brand inside a domain that doesn't belong to it, phishing keywords in the registered domain itself, a raw IP address, a disguised destination, or lookalike characters. Shortened links get a caution label since they hide where they lead.</p>
     </div>
 
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-3">
+    <div class="reveal bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-3">
         <h2 class="text-sm font-semibold text-white flex items-center space-x-2"><i class="fa-solid fa-chart-line text-emerald-400"></i><span>4. Risk scoring</span></h2>
-        <p class="text-sm text-slate-400 leading-relaxed">Every message starts at a base score of 10. Points are added for an AI/keyword classification of scam (+45) or spam (+20), for detected spoofing (+25), and for each dangerous link found (+15 each), capped at 100.</p>
+        <p class="text-sm text-zinc-400 leading-relaxed">Every message starts at a base score of 10. Points are added when the content is classified as a scam (+45) or spam (+20), when the sender looks spoofed (+25), and for each dangerous link (+15), capped at 100. Content classification uses AI when available, with a conservative keyword fallback that needs both a money hook and an urgency hook before it will call something a scam.</p>
+        <p class="text-sm text-zinc-400 leading-relaxed">Nothing is a black box: open any message and expand <em>"Why this score?"</em> to see exactly which factors added up to its number.</p>
     </div>
 
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-3">
+    <div class="reveal bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-3">
         <h2 class="text-sm font-semibold text-white flex items-center space-x-2"><i class="fa-solid fa-graduation-cap text-purple-400"></i><span>5. AI reports &amp; quizzes</span></h2>
-        <p class="text-sm text-slate-400 leading-relaxed">For risky messages, GuardMail generates a plain-English threat report and a short multiple-choice quiz, so you learn to recognize the same warning signs on your own next time.</p>
+        <p class="text-sm text-zinc-400 leading-relaxed">For risky messages, GuardMail generates a plain-English threat report and a short multiple-choice quiz, so you learn to recognize the same warning signs on your own next time. Your quiz score is tracked in your browser — check it on the Settings page.</p>
+    </div>
+
+    <div class="reveal bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-3">
+        <h2 class="text-sm font-semibold text-white flex items-center space-x-2"><i class="fa-solid fa-user-check text-blue-400"></i><span>6. You have the final say</span></h2>
+        <p class="text-sm text-zinc-400 leading-relaxed">Heuristics aren't perfect. If GuardMail flags a sender you know is legitimate, mark it as safe — alerts for that sender are muted from then on. Trusted senders are stored only in your browser and can be managed from Settings. And when something really is a scam, report it to keep a record on your Reported Cases page.</p>
     </div>
 </main>
 {% endblock %}

@@ -11,65 +11,180 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%9B%A1%EF%B8%8F</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif; }
+        .font-display { font-family: 'Space Grotesk', 'Inter', ui-sans-serif, sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+        /* ---- Motion system ----
+           Entrance animations + scroll reveals. Everything routes through these
+           classes so one switch (html.no-anim, set from the Settings toggle or
+           prefers-reduced-motion) can disable all of it. */
+        @keyframes gm-fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @keyframes gm-pop { 0% { opacity: 0; transform: scale(.6); } 70% { transform: scale(1.06); } 100% { opacity: 1; transform: scale(1); } }
+        .anim-fade-up { opacity: 0; animation: gm-fade-up .55s cubic-bezier(.22,1,.36,1) forwards; }
+        .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1); }
+        .reveal.revealed { opacity: 1; transform: none; }
+        .revealed .mock-pop { animation: gm-pop .45s cubic-bezier(.22,1,.36,1) both; }
+        .lift { transition: transform .2s cubic-bezier(.22,1,.36,1), border-color .2s; }
+        .lift:hover { transform: translateY(-3px); }
+        @keyframes gm-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .marquee-track { animation: gm-marquee 36s linear infinite; }
+        .marquee-track:hover { animation-play-state: paused; }
+        html.no-anim .marquee-track { animation: none; }
+        button:active, a.press:active { transform: scale(.97); }
+        button, a.press { transition: transform .12s ease, background-color .15s, color .15s, border-color .15s; }
+
+        html.no-anim *, html.no-anim *::before, html.no-anim *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+        html.no-anim .anim-fade-up, html.no-anim .reveal { opacity: 1 !important; transform: none !important; }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+            .anim-fade-up, .reveal { opacity: 1 !important; transform: none !important; }
+        }
     </style>
+    <script>
+        // Runs before paint so a disabled-animations preference never flashes motion.
+        try { if (localStorage.getItem('guardmail_animations') === 'off') document.documentElement.classList.add('no-anim'); } catch (e) {}
+    </script>
     {% block head %}{% endblock %}
 </head>
-<body class="bg-slate-950 text-slate-300 min-h-screen selection:bg-blue-500/30">
+<body class="bg-zinc-950 text-zinc-300 min-h-screen flex flex-col selection:bg-blue-500/30">
 
-    <header class="border-b border-slate-800/80 {% if logged_in %}bg-slate-900/80 backdrop-blur-md sticky top-0 z-50{% endif %} p-4">
+    <header class="border-b border-zinc-800/80 {% if logged_in %}bg-zinc-900/80 backdrop-blur-md sticky top-0 z-50{% endif %} p-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-8">
                 <a href="/" class="flex items-center space-x-2.5">
                     <div class="bg-blue-600 text-white p-2 rounded-lg">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
-                    <span class="font-bold text-lg tracking-tight text-white">GuardMail</span>
+                    <span class="font-display font-bold text-lg tracking-tight text-white">GuardMail</span>
                 </a>
                 {% if logged_in %}
                 <nav class="hidden sm:flex items-center space-x-1">
-                    <a href="/" class="text-sm font-medium px-3 py-1.5 rounded-lg transition {% if active_page == 'inbox' %}text-white bg-slate-800{% else %}text-slate-400 hover:text-white hover:bg-slate-800/60{% endif %}">Inbox</a>
-                    <a href="/cases" class="text-sm font-medium px-3 py-1.5 rounded-lg transition {% if active_page == 'cases' %}text-white bg-slate-800{% else %}text-slate-400 hover:text-white hover:bg-slate-800/60{% endif %}">Reported Cases</a>
-                    <a href="/settings" class="text-sm font-medium px-3 py-1.5 rounded-lg transition {% if active_page == 'settings' %}text-white bg-slate-800{% else %}text-slate-400 hover:text-white hover:bg-slate-800/60{% endif %}">Settings</a>
-                    <a href="/how-it-works" class="text-sm font-medium px-3 py-1.5 rounded-lg transition {% if active_page == 'how-it-works' %}text-white bg-slate-800{% else %}text-slate-400 hover:text-white hover:bg-slate-800/60{% endif %}">How It Works</a>
+                    <a href="/" class="text-sm font-medium px-3 py-1.5 rounded-lg transition {% if active_page == 'inbox' %}text-white bg-zinc-800{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800/60{% endif %}">Inbox</a>
+                    <a href="/cases" class="text-sm font-medium px-3 py-1.5 rounded-lg transition {% if active_page == 'cases' %}text-white bg-zinc-800{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800/60{% endif %}">Reported Cases</a>
+                    <a href="/settings" class="text-sm font-medium px-3 py-1.5 rounded-lg transition {% if active_page == 'settings' %}text-white bg-zinc-800{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800/60{% endif %}">Settings</a>
+                    <a href="/how-it-works" class="text-sm font-medium px-3 py-1.5 rounded-lg transition {% if active_page == 'how-it-works' %}text-white bg-zinc-800{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800/60{% endif %}">How It Works</a>
                 </nav>
                 {% endif %}
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3">
                 {% if logged_in %}
-                <div class="hidden sm:flex bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs text-emerald-400 items-center space-x-2 font-medium font-mono">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>LIVE</span>
-                </div>
-                <a href="/logout" class="text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg transition">
-                    <i class="fa-solid fa-right-from-bracket mr-1.5"></i>Sign Out
+                {% if demo_mode %}
+                <span class="hidden sm:inline-flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs text-amber-400 font-medium">
+                    <i class="fa-solid fa-flask"></i><span>Demo</span>
+                </span>
+                <a href="/login" class="hidden sm:inline-block whitespace-nowrap text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-lg transition">
+                    <i class="fa-brands fa-google mr-1.5"></i>Connect Gmail
+                </a>
+                <a href="/logout" class="whitespace-nowrap text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-800 border border-zinc-700 px-3 py-1.5 rounded-lg transition">
+                    Exit demo
                 </a>
                 {% else %}
-                <a href="/how-it-works" class="text-sm font-medium text-slate-400 hover:text-white transition">How It Works</a>
-                <span class="text-[11px] font-mono text-slate-500 border border-slate-800 rounded px-2 py-1">BETA</span>
+                <a href="/logout" class="text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-800 border border-zinc-700 px-3 py-1.5 rounded-lg transition">
+                    <i class="fa-solid fa-right-from-bracket mr-1.5"></i>Sign out
+                </a>
+                {% endif %}
+                {% else %}
+                <a href="/how-it-works" class="hidden sm:inline text-sm font-medium text-zinc-400 hover:text-white transition">How It Works</a>
+                <span class="hidden sm:inline text-[11px] font-mono text-zinc-500 border border-zinc-800 rounded px-2 py-1">BETA</span>
+                <a href="/login" class="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg transition">Sign in</a>
                 {% endif %}
             </div>
         </div>
         {% if logged_in %}
-        <nav class="sm:hidden max-w-7xl mx-auto flex items-center space-x-1 mt-3 overflow-x-auto">
-            <a href="/" class="text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition {% if active_page == 'inbox' %}text-white bg-slate-800{% else %}text-slate-400 hover:text-white hover:bg-slate-800/60{% endif %}">Inbox</a>
-            <a href="/cases" class="text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition {% if active_page == 'cases' %}text-white bg-slate-800{% else %}text-slate-400 hover:text-white hover:bg-slate-800/60{% endif %}">Reported Cases</a>
-            <a href="/settings" class="text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition {% if active_page == 'settings' %}text-white bg-slate-800{% else %}text-slate-400 hover:text-white hover:bg-slate-800/60{% endif %}">Settings</a>
-            <a href="/how-it-works" class="text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition {% if active_page == 'how-it-works' %}text-white bg-slate-800{% else %}text-slate-400 hover:text-white hover:bg-slate-800/60{% endif %}">How It Works</a>
+        <nav class="sm:hidden max-w-7xl mx-auto flex items-center space-x-1 mt-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <a href="/" class="text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition {% if active_page == 'inbox' %}text-white bg-zinc-800{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800/60{% endif %}">Inbox</a>
+            <a href="/cases" class="text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition {% if active_page == 'cases' %}text-white bg-zinc-800{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800/60{% endif %}">Reported Cases</a>
+            <a href="/settings" class="text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition {% if active_page == 'settings' %}text-white bg-zinc-800{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800/60{% endif %}">Settings</a>
+            <a href="/how-it-works" class="text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition {% if active_page == 'how-it-works' %}text-white bg-zinc-800{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800/60{% endif %}">How It Works</a>
         </nav>
         {% endif %}
     </header>
 
     {% block content %}{% endblock %}
+
+    <div id="toast-root" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] space-y-2 pointer-events-none w-full max-w-sm px-4"></div>
+    <script>
+        // Small shared toast helper: showToast('Saved', { actionLabel: 'Undo', onAction: fn })
+        function showToast(message, opts = {}) {
+            const root = document.getElementById('toast-root');
+            const el = document.createElement('div');
+            el.className = 'anim-fade-up pointer-events-auto flex items-center justify-between gap-4 bg-zinc-800 border border-zinc-700 text-zinc-200 text-sm rounded-xl px-4 py-3 shadow-xl shadow-black/40 transition-opacity duration-300';
+            const span = document.createElement('span');
+            span.textContent = message;
+            el.appendChild(span);
+            if (opts.actionLabel && opts.onAction) {
+                const btn = document.createElement('button');
+                btn.className = 'text-blue-400 hover:text-blue-300 font-semibold text-xs uppercase tracking-wide flex-shrink-0 cursor-pointer';
+                btn.textContent = opts.actionLabel;
+                btn.onclick = () => { opts.onAction(); el.remove(); };
+                el.appendChild(btn);
+            }
+            root.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            }, opts.duration || 4000);
+        }
+
+        function animationsEnabled() {
+            try { return localStorage.getItem('guardmail_animations') !== 'off'; } catch (e) { return true; }
+        }
+
+        // Removes and re-adds an entrance-animation class so it plays again.
+        function retriggerAnim(el, cls = 'anim-fade-up') {
+            if (!el) return;
+            el.classList.remove(cls);
+            void el.offsetWidth;
+            el.classList.add(cls);
+        }
+
+        // Scroll reveals: elements with .reveal fade up the first time they enter
+        // the viewport. Stagger siblings with style="transition-delay: ...".
+        window.addEventListener('DOMContentLoaded', () => {
+            const targets = document.querySelectorAll('.reveal');
+            if (!('IntersectionObserver' in window)) {
+                targets.forEach(t => t.classList.add('revealed'));
+                return;
+            }
+            const revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, { rootMargin: '0px 0px -8% 0px' });
+            targets.forEach(t => revealObserver.observe(t));
+        });
+    </script>
+
+    <footer class="border-t border-zinc-800/80 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2.5">
+                <div class="bg-zinc-800 text-zinc-400 p-1.5 rounded-md text-xs">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <span class="text-sm text-zinc-500">GuardMail AI &middot; &copy; 2026</span>
+            </div>
+            <nav class="flex items-center gap-6 text-sm text-zinc-400">
+                <a href="/how-it-works" class="hover:text-white transition">How It Works</a>
+                <a href="/privacy" class="hover:text-white transition">Privacy</a>
+                {% if logged_in %}<a href="/settings" class="hover:text-white transition">Settings</a>{% else %}<a href="/demo" class="hover:text-white transition">Demo</a><a href="/login" class="hover:text-white transition">Sign in</a>{% endif %}
+            </nav>
+        </div>
+    </footer>
 
     {% block scripts %}{% endblock %}
 </body>

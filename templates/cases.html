@@ -1,10 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Reported Cases - GuardMail{% endblock %}
 {% block content %}
-<main class="max-w-5xl mx-auto p-4 lg:p-6 py-10 space-y-6">
-    <div>
-        <h1 class="text-2xl font-bold text-white tracking-tight">Reported Cases</h1>
-        <p class="text-sm text-slate-500 mt-1">Emails you've flagged for review.</p>
+<main class="max-w-5xl mx-auto p-4 lg:p-6 py-10 space-y-6 w-full flex-1">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+            <h1 class="font-display text-2xl font-bold text-white tracking-tight">Reported Cases</h1>
+            <p class="text-sm text-zinc-500 mt-1">Emails you've flagged for review.</p>
+        </div>
+        {% if cases|length > 0 %}
+        <button onclick="exportCasesCsv()" class="text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-800 border border-zinc-700 px-3 py-2 rounded-lg transition cursor-pointer">
+            <i class="fa-solid fa-download mr-1.5"></i>Export CSV
+        </button>
+        {% endif %}
     </div>
 
     {% if not supabase_configured %}
@@ -12,18 +19,18 @@
         <i class="fa-solid fa-triangle-exclamation mr-2"></i>Case history isn't set up yet &mdash; reported cases aren't being saved permanently.
     </div>
     {% elif cases|length == 0 %}
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-10 text-center text-slate-500">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-10 text-center text-zinc-500">
         <i class="fa-regular fa-folder-open text-3xl opacity-50 mb-3"></i>
         <p class="text-sm">No reported cases yet. Emails you report from your inbox will show up here.</p>
     </div>
     {% else %}
-    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-800">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden divide-y divide-zinc-800">
         {% for case in cases %}
         <div class="p-4 flex items-center justify-between gap-4">
             <div class="min-w-0">
-                <p class="text-sm font-medium text-slate-200 truncate">{{ case.sender }}</p>
+                <p class="text-sm font-medium text-zinc-200 truncate">{{ case.sender }}</p>
                 <p class="text-sm text-white font-semibold truncate">{{ case.subject or '(No Subject)' }}</p>
-                <p class="text-xs text-slate-500 mt-1">{{ case.reported_at }}</p>
+                <p class="text-xs text-zinc-500 mt-1">{{ case.reported_at }}</p>
             </div>
             <span class="flex-shrink-0 text-xs font-medium font-mono px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/30">Risk: {{ case.risk_score }}%</span>
         </div>
@@ -31,4 +38,28 @@
     </div>
     {% endif %}
 </main>
+{% endblock %}
+
+{% block scripts %}
+{% if cases|length > 0 %}
+<script>
+    const REPORTED_CASES = {{ cases|tojson }};
+
+    function csvField(value) {
+        const str = String(value ?? '');
+        return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+    }
+
+    function exportCasesCsv() {
+        const header = ['reported_at', 'sender', 'subject', 'risk_score'];
+        const rows = REPORTED_CASES.map(c => header.map(k => csvField(c[k])).join(','));
+        const blob = new Blob([header.join(',') + '\n' + rows.join('\n')], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'guardmail-reported-cases.csv';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+</script>
+{% endif %}
 {% endblock %}
