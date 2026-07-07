@@ -92,6 +92,15 @@ Configured for Vercel (`vercel.json` routes everything through
 settings, with `FLASK_DEBUG` unset (or `0`) and `GOOGLE_REDIRECT_URI` pointing
 at your production callback URL.
 
+`vercel.json` also defines a Cron Job that pings `/api/ping` every 5 minutes
+to keep the serverless function warm, so real visitors hit a cold start less
+often (Python cold starts on Vercel are the main cause of a slow first load).
+Note: **on Vercel's free Hobby plan, Cron Jobs are capped at once per day**
+regardless of the schedule configured here - the 5-minute schedule only takes
+effect on a Pro (or higher) plan. On Hobby it still helps a little (one warm
+ping a day beats none), but won't meaningfully prevent cold starts spread
+across a day of real traffic.
+
 ## Known limitations
 
 - **"Reported to SOC" status is in-memory only.** It's tracked in a plain

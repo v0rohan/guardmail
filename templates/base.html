@@ -108,12 +108,14 @@
         html.no-anim .marquee-track { animation: none !important; }
     </style>
     <script>
-        // Runs before paint so the choice never flashes. Settings preference wins;
-        // if the user hasn't chosen, we honour the OS reduced-motion setting.
+        // Runs before paint so the choice never flashes. Animations default ON
+        // for everyone; the only way to get no-anim is an explicit opt-out via
+        // the Settings toggle (localStorage 'off'). We deliberately don't
+        // default off of OS-level prefers-reduced-motion here - the Settings
+        // page is the one control for this site's motion, not a system-wide
+        // signal a visitor may not even be aware is set.
         try {
-            var gmPref = localStorage.getItem('guardmail_animations');
-            var gmReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (gmPref === 'off' || (gmPref === null && gmReduce)) {
+            if (localStorage.getItem('guardmail_animations') === 'off') {
                 document.documentElement.classList.add('no-anim');
             }
         } catch (e) {}

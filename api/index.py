@@ -1068,6 +1068,15 @@ def _is_signed_in() -> bool:
     return 'credentials' in session or bool(session.get('demo'))
 
 
+@app.route('/api/ping')
+def ping():
+    """Warm-up target for the Vercel Cron job (see vercel.json) - hitting this
+    on a schedule keeps the serverless function's container from going fully
+    cold between real visits. Deliberately trivial: no session/template work,
+    just enough to prove the Python process and its imports are already warm."""
+    return jsonify({"status": "ok"})
+
+
 @app.route('/how-it-works')
 def how_it_works():
     """Static explainer page - no auth required."""

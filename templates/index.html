@@ -931,6 +931,9 @@
             applyFilters();
             setupInfiniteScroll();
             selectEmailFromUrlIfPresent();
+            // Resume auto-loading the rest of the inbox if the cache was saved
+            // mid-pagination (e.g. the user navigated away before it finished).
+            if (window.nextPageToken) setTimeout(loadNextBatch, AUTO_LOAD_DELAY_MS);
             return;
         }
 
@@ -951,6 +954,9 @@
                 applyFilters();
                 setupInfiniteScroll();
                 selectEmailFromUrlIfPresent();
+                // Keep pulling pages automatically (5 at a time) right away,
+                // instead of waiting for the user to scroll near the bottom.
+                if (window.nextPageToken) setTimeout(loadNextBatch, AUTO_LOAD_DELAY_MS);
             })
             .catch(err => showInboxError(err.message));
     }
@@ -1233,6 +1239,12 @@
         });
     }
 
+    // Small stagger between automatic chained fetches - keeps the UI responsive
+    // (each page also runs Groq categorization) and avoids firing every request
+    // in one instant burst, while still loading the whole inbox continuously
+    // without waiting for the user to scroll near the bottom.
+    const AUTO_LOAD_DELAY_MS = 250;
+
     function loadNextBatch() {
         if (!window.nextPageToken || isLoadingMore) return;
         isLoadingMore = true;
@@ -1242,6 +1254,7 @@
         const errorText = document.getElementById('load-more-error-text');
 
         errorBox.classList.add('hidden');
+        sentinel.classList.remove('hidden');
         sentinel.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i>Loading more...`;
 
         fetch(`/api/feed-state?pageToken=${encodeURIComponent(window.nextPageToken)}`)
@@ -1271,17 +1284,20 @@
 
                 window.nextPageToken = data.next_token || '';
                 saveInboxCache();
-                // Re-arm the observer (or hide the sentinel if we're done). This also
-                // chain-loads the next page immediately when the sentinel is still in
-                // view - the old code stalled here because an observer only fires on
-                // intersection changes.
-                setupInfiniteScroll();
+                setupInfiniteScroll();   // keeps the scroll-triggered fallback armed too
+                // Keep pulling pages automatically (5 at a time) until the whole
+                // inbox is loaded, rather than waiting for the user to scroll the
+                // sentinel into view.
+                if (window.nextPageToken) setTimeout(loadNextBatch, AUTO_LOAD_DELAY_MS);
             })
             .catch(err => {
                 isLoadingMore = false;
                 sentinel.innerHTML = sentinelIdleHtml();
                 errorBox.classList.remove('hidden');
                 errorText.innerText = "Couldn't load more messages (" + err.message + ").";
+                // Don't auto-retry a failed batch - the visible "Try again" button
+                // (sentinelIdleHtml / the error box) lets the user resume, and that
+                // retry goes through this same function, continuing the auto-chain.
             });
     }
 
