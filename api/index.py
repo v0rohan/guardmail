@@ -39,16 +39,20 @@ import re
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
 import httpx
-import google_auth_oauthlib.flow
 from flask import Flask, render_template, request, jsonify, redirect, session, copy_current_request_context
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from groq import Groq
 from dotenv import load_dotenv
-from google.auth.exceptions import RefreshError
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
+
+# google_auth_oauthlib / googleapiclient are NOT imported here - they're the
+# heaviest imports in this file (large discovery/reflection machinery under
+# the hood) and on a serverless cold start, a module-level import means every
+# request pays that cost even for routes that never touch Gmail (the landing
+# page, /demo, /how-it-works, /settings, /cases...). They're imported lazily
+# inside the specific functions that need them (fetch_gmail_emails, /login,
+# /callback) instead, so only an actual OAuth/Gmail request pays for them.
 
 load_dotenv()
 
@@ -544,6 +548,9 @@ def fetch_gmail_emails(page_token=None, reported_ids=None):
         reported_ids = REPORTED_SOC_IDS
     if 'credentials' not in session:
         return [], None, None
+    from google.auth.exceptions import RefreshError
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
     try:
         creds_dict = session['credentials']
         credentials = Credentials(
@@ -768,6 +775,7 @@ def index():
 def login():
     """Starts the Google OAuth flow: builds the Google consent-screen URL,
     stashes a CSRF state token in the session, and redirects the browser there."""
+    import google_auth_oauthlib.flow
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
         CLIENT_CONFIG,
         scopes=SCOPES
@@ -786,6 +794,8 @@ def callback():
     """Google OAuth redirect target. Verifies the CSRF state param matches what
     /login stashed, exchanges the authorization code for credentials, stores
     those credentials in the session, and looks up the user's email address."""
+    import google_auth_oauthlib.flow
+    from googleapiclient.discovery import build
     state = session.get('state')
     incoming_state = request.args.get('state')
     
