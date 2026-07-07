@@ -69,7 +69,12 @@ if not FLASK_SECRET_KEY:
 app.secret_key = FLASK_SECRET_KEY
 
 # Session cookies carry Gmail OAuth credentials, so lock them down: no JS access,
-# not sent cross-site, and HTTPS-only outside of local debugging.
+# not sent cross-site, and HTTPS-only outside of local debugging. Note the
+# failure mode if DEBUG_MODE is off while testing over plain http://localhost:
+# browsers/HTTP clients silently refuse to send a Secure-flagged cookie back
+# over an insecure connection, so the session never round-trips at all - not
+# just OAuth, but login, demo mode, and reported cases all silently stop
+# persisting across requests. Set FLASK_DEBUG=1 for any local HTTP testing.
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = not DEBUG_MODE
@@ -888,6 +893,15 @@ def report_to_soc(email_id):
 
     if session.get('demo'):
         # Demo cases live in the session so the /cases page works without Supabase.
+        # Known limitation: this is a read-modify-write on the session cookie, so
+        # two report requests that are truly concurrent (fired within the same
+        # round-trip window, e.g. rapid double-clicks) can both read the same
+        # stale cookie and the later response's Set-Cookie silently drops the
+        # other's entry. Not a concern for real (non-demo) reports - those are
+        # independent Supabase row inserts, not a session read-modify-write.
+        # Acceptable for demo mode's ephemeral, no-account sandbox; fixing it
+        # properly would mean server-side storage for demo state, which is the
+        # exact external-infrastructure cost demo mode exists to avoid.
         from datetime import datetime, timezone
         data = request.json or {}
         demo_cases = session.get('demo_cases', [])

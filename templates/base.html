@@ -36,10 +36,21 @@
         .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
         .u-accent { color: var(--accent); }
 
-        /* Highlighter mark: a soft cream swatch fully behind the word (not a
-           partial gradient split - Fraunces' tall ascenders on letters like "f"
-           sat right at the gradient's cutoff line and looked clipped/warped). */
-        .mark { background: rgba(236,227,208,.16); border-radius: .3em; padding: .04em .22em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+        /* Highlighter mark: an opaque cream swipe on a ::before behind the word,
+           with the word itself recolored to ink - a real marker fully covers
+           the paper and the dark ink still reads on top, rather than a faint
+           tint that just muddies to gray against a near-black page. The rect
+           is a ::before (not a padded background on the word) so it doesn't
+           push the surrounding line layout, and it overshoots the glyph
+           bounds generously on top so a tall ascender like Fraunces' "f" is
+           never clipped by the shape's edge. */
+        .mark { position: relative; white-space: nowrap; color: var(--accent-ink); }
+        .mark::before {
+            content: ""; position: absolute; z-index: -1;
+            left: -.1em; right: -.1em; top: -.09em; bottom: -.03em;
+            background: var(--accent); border-radius: .2em;
+            transform: rotate(-.5deg);
+        }
 
         /* Reusable components (single source of truth for the accent). */
         .btn-primary { background: var(--accent); color: var(--accent-ink); }
@@ -74,11 +85,29 @@
         .lift { transition: transform .25s var(--ease), border-color .25s, box-shadow .25s; }
         .lift:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -24px rgba(0,0,0,.9); }
         /* GPU-composited marquee: translate3d + will-change keeps it off the main
-           thread so it doesn't stutter or hitch. */
+           thread. contain isolates it from reflows elsewhere on the page (e.g. a
+           webfont finishing its swap in the hero shouldn't force a relayout here),
+           and its own font stack means IT never waits on a webfont swap either -
+           both were plausible sources of a mid-scroll hitch. */
         @keyframes gm-marquee { from { transform: translate3d(0,0,0); } to { transform: translate3d(-50%,0,0); } }
-        .marquee-track { animation: gm-marquee 60s linear infinite; will-change: transform; backface-visibility: hidden; }
+        .marquee-clip { contain: layout style paint; }
+        .marquee-track {
+            animation: gm-marquee 32s linear infinite;
+            will-change: transform; backface-visibility: hidden; transform: translateZ(0);
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        }
         .marquee-track:hover { animation-play-state: paused; }
         .marquee-item { margin-right: 2.5rem; }
+        /* mask-image needs the -webkit- prefix on WebKit/Safari; without it the
+           browser can silently fall back to an unaccelerated, per-frame software
+           compositing path for the masked (and animated) element underneath,
+           which is a classic cause of periodic jank. */
+        .marquee-fade {
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+            -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+            -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+        }
         button:active, a.press:active { transform: scale(.975); }
         button, a.press { transition: transform .14s ease, background-color .18s, color .18s, border-color .18s, box-shadow .18s; }
 

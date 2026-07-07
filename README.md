@@ -50,7 +50,9 @@ FLASK_SECRET_KEY=...        # required; signs session cookies (which carry OAuth
 GOOGLE_CLIENT_ID=...        # from Google Cloud Console OAuth client
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REDIRECT_URI=http://localhost:3000/callback
-FLASK_DEBUG=1                # optional, local dev only - enables Flask debug mode and allows OAuth over plain HTTP
+FLASK_DEBUG=1                # local dev only - without this, session cookies are marked Secure and
+                              # silently never get sent back over plain http://localhost, so sessions
+                              # (login, demo mode, reported cases) won't persist across requests at all
 ```
 
 Run it:

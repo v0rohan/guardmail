@@ -103,7 +103,7 @@
     <!-- Scrolling ticker of real-world phishing subject lines -->
     <div class="reveal mt-20 w-full max-w-5xl" aria-hidden="true">
         <p class="text-xs tracking-wide text-zinc-600 mb-3 text-center">Subject lines we catch every day</p>
-        <div class="overflow-hidden border-y border-zinc-800/80 py-3 [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+        <div class="marquee-clip marquee-fade overflow-hidden border-y border-zinc-800/80 py-3">
             <!-- Each span carries its own trailing margin (marquee-item) instead of a
                  flex `gap`: gap only inserts space *between* items (N-1 gaps), so with
                  two duplicated halves the wrap point lands short by exactly one gap,
@@ -758,18 +758,36 @@
     }
 
     // Counts a stat up/down to its new value instead of snapping.
+    //
+    // Two defenses against landing on the wrong number:
+    // 1. A time-based setTimeout safety net, since backgrounded tabs throttle
+    //    requestAnimationFrame (sometimes to near-zero) and a rAF-only loop
+    //    could leave the counter stuck on a stale value indefinitely.
+    // 2. A per-element generation token, since two calls can legitimately
+    //    overlap (e.g. reporting two emails in quick succession both call
+    //    updateAnalytics before the first count-up finishes) - without it,
+    //    the OLDER call's delayed safety net can fire after the newer one
+    //    and stomp the correct, more recent value back down.
     function animateNumber(el, target, suffix = '') {
         const from = parseInt((el.innerText || '').replace(/[^0-9-]/g, ''), 10) || 0;
+        const gen = (el._animGen = (el._animGen || 0) + 1);
+        // Only one pending safety-net timer per element at a time, so a rapid
+        // second call can't leave two timers racing against each other.
+        if (el._animTimer) { clearTimeout(el._animTimer); el._animTimer = null; }
         if (!animationsEnabled() || from === target) { el.innerText = target + suffix; return; }
         const start = performance.now();
         const duration = 500;
+        const finish = () => { if (el._animGen === gen) el.innerText = target + suffix; };
         function tick(now) {
+            if (el._animGen !== gen) return;   // a newer call has taken over this element
             const t = Math.min((now - start) / duration, 1);
             const eased = 1 - Math.pow(1 - t, 3);
             el.innerText = Math.round(from + (target - from) * eased) + suffix;
             if (t < 1) requestAnimationFrame(tick);
+            else finish();
         }
         requestAnimationFrame(tick);
+        el._animTimer = setTimeout(finish, duration + 200);
     }
 
     function updateSidebarCounts() {
